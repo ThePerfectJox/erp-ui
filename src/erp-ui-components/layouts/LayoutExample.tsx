@@ -1,6 +1,4 @@
-import Layout from "./Layout";
-import SidebarGroup from "./SidebarGroup";
-import SidebarList from "./SidebarList";
+import { Layout, SidebarGroup, SidebarList } from "./index";
 import warehouseIcon from "../assets/warehouse.svg";
 
 export default function LayoutExample() {
