@@ -1,0 +1,102 @@
+/* erp-ui-components/modals/index.css
+ *
+ * The backdrop (dimmed full-screen scrim), the dialog surface and the three
+ * width presets. The dialog's contents are supplied by the caller as
+ * `children`; this sheet only styles the shell.
+ *
+ * Colours come from the global theme (src/index.css). This sheet only aliases
+ * those `--color-*` tokens into modal-scoped `--erp-modal-*` names; the second
+ * argument to each var() is a fallback so the modal still renders if it is ever
+ * loaded without the global sheet.
+ *
+ * DOM (from Modal.tsx, portalled into <body>):
+ *   <div class="modal-backdrop">
+ *     <div class="modal modal-md" role="dialog">
+ *       <div class="modal-body">   ← caller's `children`, the only scroll region
+ */
+
+:root {
+	/* Sits above the layout chrome (header z-index: 20, sidebar: 10). */
+	--erp-modal-z: 1000;
+
+	--erp-modal-scrim:    rgba(15, 23, 42, 0.55);
+	--erp-modal-surface:  var(--color-surface, #ffffff);
+	--erp-modal-fg:       var(--color-text, #1f2733);
+
+	--erp-modal-radius:     var(--radius-lg, 12px);
+	--erp-modal-shadow:     var(--shadow-lg, 0 10px 30px rgba(15, 23, 42, 0.12));
+	--erp-modal-transition: var(--transition, 200ms ease);
+}
+
+/* Deepen the scrim on the dark palette (mirrors src/index.css). */
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--erp-modal-scrim: rgba(0, 0, 0, 0.62);
+	}
+}
+
+/* --- Backdrop: fixed, full-viewport, centres the dialog --- */
+.modal-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: var(--erp-modal-z);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1.5rem;
+	background: var(--erp-modal-scrim);
+	animation: erp-modal-backdrop-in var(--erp-modal-transition);
+}
+
+/* --- Dialog surface --- */
+.modal {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	/* Never taller than the viewport (minus the backdrop padding) — the body
+	 * scrolls inside instead. */
+	max-height: calc(100vh - 3rem);
+	overflow: hidden;
+	background: var(--erp-modal-surface);
+	color: var(--erp-modal-fg);
+	border-radius: var(--erp-modal-radius);
+	box-shadow: var(--erp-modal-shadow);
+	animation: erp-modal-in var(--erp-modal-transition);
+}
+
+/* The dialog is only focused programmatically; no need for a visible ring. */
+.modal:focus {
+	outline: none;
+}
+
+/* --- Width presets (the `size` prop) --- */
+.modal-sm { max-width: 24rem; }
+.modal-md { max-width: 34rem; }
+.modal-lg { max-width: 52rem; }
+
+/* --- Body — the caller's content, and the only scrolling region --- */
+.modal-body {
+	flex: 1;
+	min-height: 0;
+	padding: 1.25rem;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+}
+
+/* --- Entrance animation --- */
+@keyframes erp-modal-backdrop-in {
+	from { opacity: 0; }
+	to   { opacity: 1; }
+}
+
+@keyframes erp-modal-in {
+	from { opacity: 0; transform: translateY(0.75rem) scale(0.98); }
+	to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.modal-backdrop,
+	.modal {
+		animation: none;
+	}
+}

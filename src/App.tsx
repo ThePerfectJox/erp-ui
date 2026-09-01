@@ -1,9 +1,10 @@
 import './App.css'
-import LayoutExample from './erp-ui-components/layouts/LayoutExample';
+import ModalExample from './erp-ui-components/modals/ModalExample';
 
 function App() {
-	return (
-		<LayoutExample />
+	return (<>
+		<ModalExample />
+	</>
 	);
 }
 
