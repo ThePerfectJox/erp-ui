@@ -27,6 +27,7 @@
 	--erp-sidebar-hover:    var(--color-chrome-hover, #2c3a4c);
 	--erp-sidebar-active:   var(--color-chrome-active, #4b8bf5);
 	--erp-border:           var(--color-chrome-border, #33404f);
+	--erp-scrollbar:        var(--color-border-strong, #cbd2da);
 
 	--erp-content-bg: var(--color-bg, #f6f7f9);
 	--erp-text:       var(--color-text, #1f2733);
@@ -40,6 +41,10 @@
 
 body {
 	margin: 0;
+	/* The shell fills the viewport and never scrolls itself — the sidebar and
+	 * the main area are each their own independent scroll container. */
+	height: 100vh;
+	overflow: hidden;
 	background: var(--erp-content-bg);
 	color: var(--erp-text);
 	font-family: var(--font-sans, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
@@ -121,6 +126,8 @@ aside.sidebar {
 	border-right: 1px solid var(--erp-border);
 	overflow-x: hidden;
 	overflow-y: auto;
+	/* keep the sidebar's scroll to itself — don't chain to the page */
+	overscroll-behavior: contain;
 	transition: width var(--erp-transition), transform var(--erp-transition);
 	scrollbar-width: thin;
 	scrollbar-color: var(--erp-sidebar-hover) transparent;
@@ -143,22 +150,38 @@ aside.sidebar.closed {
 	border-right-color: transparent;
 }
 
-/* --- Main content — offset by the header, footer and sidebar --- */
+/* --- Main content — a fixed panel between the header/footer and the sidebar,
+ * with its own scrollbar so it scrolls independently of the sidebar. --- */
 main {
-	margin-top: var(--erp-header-height);
-	margin-bottom: var(--erp-footer-height);
-	margin-left: var(--erp-sidebar-width);
+	position: fixed;
+	top: var(--erp-header-height);
+	bottom: var(--erp-footer-height);
+	left: var(--erp-sidebar-width);
+	right: 0;
 	padding: 1.5rem;
-	min-height: calc(100vh - var(--erp-header-height) - var(--erp-footer-height));
+	overflow-x: hidden;
+	overflow-y: auto;
+	overscroll-behavior: contain;
 	background: var(--erp-content-bg);
 	color: var(--erp-text);
-	transition: margin-left var(--erp-transition);
+	transition: left var(--erp-transition);
+	scrollbar-width: thin;
+	scrollbar-color: var(--erp-scrollbar) transparent;
+}
+
+main::-webkit-scrollbar {
+	width: 10px;
+}
+
+main::-webkit-scrollbar-thumb {
+	background: var(--erp-scrollbar);
+	border-radius: var(--radius-pill, 999px);
 }
 
 /* When the sidebar is closed, let the content reclaim the space.
  * `~` is the general-sibling selector; header/aside/main/footer are siblings. */
 aside.sidebar.closed ~ main {
-	margin-left: 0;
+	left: 0;
 }
 
 /* --- Footer (fixed, full width) --- */
