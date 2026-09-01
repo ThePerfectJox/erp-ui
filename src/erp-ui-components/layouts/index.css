@@ -1,0 +1,262 @@
+/* erp-ui-components/layouts/index.css
+ *
+ * Positions the header / sidebar / main / footer and animates the sidebar
+ * between its open and closed states.
+ *
+ * Colours come from the global theme (src/index.css). This sheet only aliases
+ * those `--color-*` tokens into layout-scoped `--erp-*` names; the second
+ * argument to each var() is a fallback so the layout still renders if it is
+ * ever loaded without the global sheet.
+ *
+ * DOM (siblings, from Layout.tsx):
+ *   <header> · <aside class="sidebar open|closed"> · <main> · <footer>
+ */
+
+:root {
+	/* --- Layout metrics --- */
+	--erp-header-height: 3rem;
+	--erp-footer-height: 2.25rem;
+	--erp-sidebar-width: 15rem;
+	--erp-transition: var(--transition, 200ms ease);
+
+	/* --- Colours (aliased from the global theme) --- */
+	--erp-header-bg:        var(--color-chrome-bg-elevated, #263241);
+	--erp-sidebar-bg:       var(--color-chrome-bg, #1f2a37);
+	--erp-sidebar-fg:       var(--color-chrome-fg, #cfd6df);
+	--erp-sidebar-fg-muted: var(--color-chrome-fg-muted, #8b95a3);
+	--erp-sidebar-hover:    var(--color-chrome-hover, #2c3a4c);
+	--erp-sidebar-active:   var(--color-chrome-active, #4b8bf5);
+	--erp-border:           var(--color-chrome-border, #33404f);
+
+	--erp-content-bg: var(--color-bg, #f6f7f9);
+	--erp-text:       var(--color-text, #1f2733);
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: var(--erp-content-bg);
+	color: var(--erp-text);
+	font-family: var(--font-sans, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
+}
+
+/* --- Header (fixed, full width) --- */
+header {
+	position: fixed;
+	inset: 0 0 auto 0;
+	height: var(--erp-header-height);
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	padding: 0 1rem;
+	background: var(--erp-header-bg);
+	color: var(--erp-sidebar-fg);
+	border-bottom: 1px solid var(--erp-border);
+	box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.06));
+	z-index: 20;
+}
+
+.header-left {
+	display: flex;
+	align-items: center;
+}
+
+.header-center {
+	flex: 1;
+	text-align: center;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	color: #fff;
+}
+
+.header-right {
+	width: 2rem;
+}
+
+/* --- Sidebar toggle button (lives in the header) --- */
+.sidebar-header {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.35rem 0.5rem;
+	border-radius: var(--radius-sm, 4px);
+	cursor: pointer;
+	user-select: none;
+	transition: background var(--erp-transition);
+}
+
+.sidebar-header:hover {
+	background: var(--erp-sidebar-hover);
+}
+
+.sidebar-header-icon {
+	width: 1.4rem;
+	height: 1.4rem;
+	/* the source SVGs are black; invert so they show on the dark header */
+	filter: invert(1);
+	opacity: 0.85;
+}
+
+.sidebar-header-description {
+	font-size: 0.8rem;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	color: var(--erp-sidebar-fg-muted);
+}
+
+/* --- Sidebar (fixed, sits below the header) --- */
+aside.sidebar {
+	position: fixed;
+	top: var(--erp-header-height);
+	bottom: var(--erp-footer-height);
+	left: 0;
+	width: var(--erp-sidebar-width);
+	background: var(--erp-sidebar-bg);
+	color: var(--erp-sidebar-fg);
+	border-right: 1px solid var(--erp-border);
+	overflow-x: hidden;
+	overflow-y: auto;
+	transition: width var(--erp-transition), transform var(--erp-transition);
+	scrollbar-width: thin;
+	scrollbar-color: var(--erp-sidebar-hover) transparent;
+	z-index: 10;
+}
+
+aside.sidebar::-webkit-scrollbar {
+	width: 8px;
+}
+
+aside.sidebar::-webkit-scrollbar-thumb {
+	background: var(--erp-sidebar-hover);
+	border-radius: var(--radius-pill, 999px);
+}
+
+/* The closed state — collapse the width and slide it out of view. */
+aside.sidebar.closed {
+	width: 0;
+	transform: translateX(-100%);
+	border-right-color: transparent;
+}
+
+/* --- Main content — offset by the header, footer and sidebar --- */
+main {
+	margin-top: var(--erp-header-height);
+	margin-bottom: var(--erp-footer-height);
+	margin-left: var(--erp-sidebar-width);
+	padding: 1.5rem;
+	min-height: calc(100vh - var(--erp-header-height) - var(--erp-footer-height));
+	background: var(--erp-content-bg);
+	color: var(--erp-text);
+	transition: margin-left var(--erp-transition);
+}
+
+/* When the sidebar is closed, let the content reclaim the space.
+ * `~` is the general-sibling selector; header/aside/main/footer are siblings. */
+aside.sidebar.closed ~ main {
+	margin-left: 0;
+}
+
+/* --- Footer (fixed, full width) --- */
+footer {
+	position: fixed;
+	inset: auto 0 0 0;
+	height: var(--erp-footer-height);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 1rem;
+	background: var(--erp-header-bg);
+	color: var(--erp-sidebar-fg-muted);
+	border-top: 1px solid var(--erp-border);
+	font-size: 0.8rem;
+}
+
+/* --- Sidebar groups --- */
+.sidebar .sidebar-group + .sidebar-group {
+	border-top: 1px solid var(--erp-border);
+}
+
+.sidebar-group-header {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	padding: 0.75rem 1rem;
+	white-space: nowrap;
+	cursor: pointer;
+	transition: background var(--erp-transition);
+}
+
+.sidebar-group-header:hover {
+	background: var(--erp-sidebar-hover);
+}
+
+.sidebar-group-icon {
+	width: 1.25rem;
+	height: 1.25rem;
+	filter: invert(1);
+	opacity: 0.7;
+	flex: none;
+}
+
+.sidebar-group-description {
+	flex: 1;
+	font-size: 0.8rem;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--erp-sidebar-fg-muted);
+}
+
+.sidebar-group-toggle {
+	font-size: 0.7rem;
+	line-height: 1;
+	color: var(--erp-sidebar-fg-muted);
+	transition: transform 150ms ease;
+}
+
+.sidebar-group-toggle.open {
+	transform: rotate(90deg);
+}
+
+.sidebar-group-list {
+	padding: 0.25rem 0 0.5rem;
+}
+
+.sidebar-list-item {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.5rem 1rem 0.5rem 2.75rem;
+	white-space: nowrap;
+	cursor: pointer;
+	font-size: 0.85rem;
+	color: var(--erp-sidebar-fg);
+	box-shadow: inset 0 0 0 0 var(--erp-sidebar-active);
+	transition: background var(--erp-transition), box-shadow var(--erp-transition);
+}
+
+.sidebar-list-item:hover {
+	background: var(--erp-sidebar-hover);
+	box-shadow: inset 3px 0 0 0 var(--erp-sidebar-active);
+}
+
+.sidebar-list-item-icon {
+	width: 1rem;
+	height: 1rem;
+	filter: invert(1);
+	opacity: 0.7;
+	flex: none;
+}
+
+/* Keyboard focus for the clickable rows (they are <div>s with onClick). */
+.sidebar-header:focus-visible,
+.sidebar-group-header:focus-visible,
+.sidebar-list-item:focus-visible {
+	outline: 2px solid var(--erp-sidebar-active);
+	outline-offset: -2px;
+}

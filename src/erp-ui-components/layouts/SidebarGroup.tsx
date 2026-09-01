@@ -4,19 +4,17 @@ interface SidebarGroupProps {
 	id?: string,
 	icon?: string,
 	description: string,
-	sidebarOpen: boolean,
+	sidebarOpen?: boolean,
 	list: ReactElement[],
 }
 
-export default function SidebarGroup({ id, icon, description, sidebarOpen, list }: SidebarGroupProps) {
+export default function SidebarGroup({ id, icon, description, sidebarOpen = true, list }: SidebarGroupProps) {
 	const [sidebarGroupOpenState, setSidebarGroupOpenState] = useState(false);
 	const uniqueId = useId();
 	const finalId = id ?? uniqueId;
 
 	const handleClick = () => {
-		if (!sidebarOpen) {
-			setSidebarGroupOpenState(false);
-		}
+		if (!sidebarOpen) return;
 		setSidebarGroupOpenState((prevOpen) => !prevOpen);
 	};
 
@@ -27,11 +25,11 @@ export default function SidebarGroup({ id, icon, description, sidebarOpen, list 
 					<img src={icon} alt="" className="sidebar-group-icon" />
 				)}
 				<span className="sidebar-group-description">{description}</span>
-				<span className={sidebarGroupOpenState ? "sidebar-group-toggle" : "sidebar-group-toggle open"}>
-					\u25B6
+				<span className={sidebarGroupOpenState ? "sidebar-group-toggle open" : "sidebar-group-toggle"}>
+					&#x25B6;
 				</span>
 			</div>
-			{sidebarGroupOpenState ? (
+			{sidebarGroupOpenState && sidebarOpen ? (
 				<div className="sidebar-group-list">
 					{list.map((element, index) => (
 						<div key={index} className="sidebar-group-list-item-wrapper">

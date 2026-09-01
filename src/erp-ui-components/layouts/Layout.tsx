@@ -1,12 +1,17 @@
-import { useState, type ReactElement, type ReactNode } from "react";
+import { cloneElement, useState, type ReactElement, type ReactNode } from "react";
 import Header from "./Header";
 import SidebarHeader from "./SidebarHeader";
 import Sidebar from "./Sidebar";
 import Content from "./Content";
 import Footer from "./Footer";
 
+import "./index.css";
+
+import sidebarOpenedIcon from "../assets/menu.svg";
+import sidebarClosedIcon from "../assets/menu-close.svg";
+
 interface LayoutProps {
-	sidebarGroups: ReactElement[],
+	sidebarGroups: ReactElement<{ sidebarOpen?: boolean }>[],
 	content: ReactNode,
 }
 
@@ -16,10 +21,12 @@ export default function Layout({ sidebarGroups, content }: LayoutProps) {
 		setSidebarOpenState((prevOpen) => !prevOpen);
 	};
 
-	const sidebarOpenedIcon = "../assets/menu.svg"
-	const sidebarClosedIcon = "../assets/menu-close.svg"
 	const headerText = "ERP-UI"
-	const footerText = `&copy; ${new Date().getFullYear()} JoxNeis. All rights reserved`
+	const footerText = `© ${new Date().getFullYear()} JoxNeis. All rights reserved`
+
+	const groupsWithState = sidebarGroups.map((group, index) =>
+		cloneElement(group, { key: group.key ?? index, sidebarOpen: sidebarOpenState })
+	);
 
 	return (
 		<>
@@ -35,8 +42,8 @@ export default function Layout({ sidebarGroups, content }: LayoutProps) {
 				text={headerText}
 			/>
 			<Sidebar
-				sidebarGroups={sidebarGroups}
-				setSidebarOpenState={handleClick}
+				sidebarGroups={groupsWithState}
+				sidebarOpenState={sidebarOpenState}
 			/>
 			<Content
 				component={content}

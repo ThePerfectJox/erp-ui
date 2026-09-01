@@ -2,12 +2,12 @@ import type { ReactElement } from "react";
 
 interface SidebarProps {
 	sidebarGroups: ReactElement[];
-	setSidebarOpenState: () => void;
+	sidebarOpenState: boolean;
 }
 
-export default function Sidebar({ sidebarGroups, setSidebarOpenState }: SidebarProps) {
+export default function Sidebar({ sidebarGroups, sidebarOpenState }: SidebarProps) {
 	return (
-		<aside className="sidebar-group" onClick={setSidebarOpenState}>
+		<aside className={`sidebar ${sidebarOpenState ? "open" : "closed"}`}>
 			{sidebarGroups}
 		</aside>
 	);
