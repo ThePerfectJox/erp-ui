@@ -5,11 +5,12 @@ interface SidebarGroupProps {
 	icon?: string,
 	description: string,
 	sidebarOpen?: boolean,
+	defaultExpanded?: boolean,
 	list: ReactElement[],
 }
 
-export default function SidebarGroup({ id, icon, description, sidebarOpen = true, list }: SidebarGroupProps) {
-	const [sidebarGroupOpenState, setSidebarGroupOpenState] = useState(false);
+export default function SidebarGroup({ id, icon, description, sidebarOpen = true, defaultExpanded = false, list }: SidebarGroupProps) {
+	const [sidebarGroupOpenState, setSidebarGroupOpenState] = useState(defaultExpanded);
 	const uniqueId = useId();
 	const finalId = id ?? uniqueId;
 

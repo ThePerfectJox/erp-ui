@@ -6,12 +6,12 @@
  * `--erp-data-table-*` names, each with a hardcoded fallback so the module
  * still renders standalone.
  *
- * Look: a compact, gridline-free enterprise data grid — SAP Fiori's "Compact"
- * row density and its selected-row left accent bar, rather than the taller,
- * airier row spacing of a typical consumer web table. Zebra striping (even
- * rows) and tabular figures keep dense numeric data scannable, but there are
- * no vertical rules — that reads as the older heavy Excel-grid style, not a
- * modern one.
+ * Look: a gridline-free enterprise data grid — SAP Fiori's row rhythm and
+ * its selected-row left accent bar, sized for readability rather than
+ * maximum density (there's no reason to fight a Fiori "Compact" row height
+ * when the data isn't virtualized). Zebra striping (even rows) and tabular
+ * figures keep numeric data scannable, but there are no vertical rules —
+ * that reads as the older heavy Excel-grid style, not a modern one.
  *
  * DOM (from DataTable.tsx):
  *   <div class="data-table-container">
@@ -61,7 +61,7 @@
 	width: 100%;
 	border-collapse: collapse;
 	color: var(--erp-data-table-text);
-	font-size: 0.8125rem;
+	font-size: 0.875rem;
 	font-variant-numeric: tabular-nums;
 }
 
@@ -78,11 +78,11 @@
 	align-items: center;
 	gap: 0.375rem;
 	width: 100%;
-	padding: 0.5rem 0.75rem;
+	padding: 0.75rem 0.875rem;
 	background: none;
 	border: none;
 	font: inherit;
-	font-size: 0.75rem;
+	font-size: 0.8125rem;
 	font-weight: 600;
 	color: var(--erp-data-table-text-muted);
 	cursor: pointer;
@@ -140,14 +140,14 @@
 }
 
 .data-table-cell {
-	padding: 0.4375rem 0.75rem;
+	padding: 0.625rem 0.875rem;
 	vertical-align: middle;
 	white-space: nowrap;
 }
 
 .data-table-checkbox-cell {
-	width: 2.25rem;
-	padding-left: 0.75rem;
+	width: 2.5rem;
+	padding-left: 0.875rem;
 }
 
 .data-table-checkbox-cell input[type="checkbox"],
@@ -164,8 +164,8 @@
 	 * column collapses to whatever its header label needs and long values
 	 * get clipped. `min-width` is a definite length, so it counts. */
 	width: 100%;
-	min-width: 6rem;
-	padding: 0.25rem 0.375rem;
+	min-width: 7rem;
+	padding: 0.375rem 0.5rem;
 	background: transparent;
 	color: inherit;
 	font: inherit;
@@ -189,5 +189,5 @@
 	display: flex;
 	align-items: center;
 	gap: 0.75rem;
-	margin-top: 0.625rem;
+	margin-top: 1rem;
 }

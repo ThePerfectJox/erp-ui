@@ -14,9 +14,9 @@
 
 :root {
 	/* --- Layout metrics --- */
-	--erp-header-height: 3rem;
-	--erp-footer-height: 2.25rem;
-	--erp-sidebar-width: 15rem;
+	--erp-header-height: 3.25rem;
+	--erp-footer-height: 2.5rem;
+	--erp-sidebar-width: 16rem;
 	--erp-transition: var(--transition, 200ms ease);
 
 	/* --- Colours (aliased from the global theme) --- */
@@ -108,7 +108,7 @@ header {
 }
 
 .sidebar-header-description {
-	font-size: 0.8rem;
+	font-size: 0.875rem;
 	font-weight: 600;
 	letter-spacing: 0.06em;
 	color: var(--erp-sidebar-fg-muted);
@@ -158,7 +158,7 @@ main {
 	bottom: var(--erp-footer-height);
 	left: var(--erp-sidebar-width);
 	right: 0;
-	padding: 1.5rem;
+	padding: 2rem;
 	overflow-x: hidden;
 	overflow-y: auto;
 	overscroll-behavior: contain;
@@ -196,7 +196,7 @@ footer {
 	background: var(--erp-header-bg);
 	color: var(--erp-sidebar-fg-muted);
 	border-top: 1px solid var(--erp-border);
-	font-size: 0.8rem;
+	font-size: 0.8125rem;
 }
 
 /* --- Sidebar groups --- */
@@ -207,8 +207,8 @@ footer {
 .sidebar-group-header {
 	display: flex;
 	align-items: center;
-	gap: 0.6rem;
-	padding: 0.75rem 1rem;
+	gap: 0.625rem;
+	padding: 0.875rem 1rem;
 	white-space: nowrap;
 	cursor: pointer;
 	transition: background var(--erp-transition);
@@ -228,7 +228,7 @@ footer {
 
 .sidebar-group-description {
 	flex: 1;
-	font-size: 0.8rem;
+	font-size: 0.8125rem;
 	font-weight: 600;
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
@@ -253,11 +253,11 @@ footer {
 .sidebar-list-item {
 	display: flex;
 	align-items: center;
-	gap: 0.5rem;
-	padding: 0.5rem 1rem 0.5rem 2.75rem;
+	gap: 0.625rem;
+	padding: 0.625rem 1rem 0.625rem 2.75rem;
 	white-space: nowrap;
 	cursor: pointer;
-	font-size: 0.85rem;
+	font-size: 0.9rem;
 	color: var(--erp-sidebar-fg);
 	box-shadow: inset 0 0 0 0 var(--erp-sidebar-active);
 	transition: background var(--erp-transition), box-shadow var(--erp-transition);

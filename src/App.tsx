@@ -1,13 +1,8 @@
 import './App.css'
-import ModalExample from './erp-ui-components/modals/ModalExample';
-import DataTableExample from './erp-ui-components/data-table/DataTableExample';
+import MasterExample from './erp-ui-components/MasterExample';
 
 function App() {
-	return (<>
-		<ModalExample />
-		<DataTableExample />
-	</>
-	);
+	return <MasterExample />
 }
 
 export default App
