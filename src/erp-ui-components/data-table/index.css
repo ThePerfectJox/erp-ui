@@ -1,0 +1,193 @@
+/* erp-ui-components/data-table/index.css
+ *
+ * The table shell, header, rows, checkboxes and editable-cell inputs. Colours
+ * come from the global theme (src/index.css); this sheet only aliases those
+ * `--color-*`/`--radius-*`/`--shadow-*`/`--transition-*` tokens into
+ * `--erp-data-table-*` names, each with a hardcoded fallback so the module
+ * still renders standalone.
+ *
+ * Look: a compact, gridline-free enterprise data grid — SAP Fiori's "Compact"
+ * row density and its selected-row left accent bar, rather than the taller,
+ * airier row spacing of a typical consumer web table. Zebra striping (even
+ * rows) and tabular figures keep dense numeric data scannable, but there are
+ * no vertical rules — that reads as the older heavy Excel-grid style, not a
+ * modern one.
+ *
+ * DOM (from DataTable.tsx):
+ *   <div class="data-table-container">
+ *     <table class="data-table">
+ *       <thead><tr>
+ *         <th class="data-table-th data-table-checkbox-cell">      ← select-all
+ *         <th class="data-table-th" aria-sort="...">               ← DataTableColumn
+ *       <tbody>
+ *         <tr class="data-table-row [data-table-row-selected]">
+ *           <td class="data-table-cell data-table-checkbox-cell">  ← row checkbox
+ *           <td class="data-table-cell [data-table-cell-editable]">← DataTableCell
+ *     <div class="data-table-actions">   ← caller's `actions`, only if supplied
+ */
+
+:root {
+	--erp-data-table-surface:       var(--color-surface, #ffffff);
+	--erp-data-table-header-bg:     var(--color-surface-alt, #f1f3f5);
+	--erp-data-table-zebra-bg:      var(--color-surface-alt, #f1f3f5);
+	--erp-data-table-row-hover:     var(--color-border, #e2e5ea);
+	--erp-data-table-selected-bg:   var(--color-primary-soft, #e8f0fe);
+	--erp-data-table-border:        var(--color-border, #e2e5ea);
+	--erp-data-table-border-strong: var(--color-border-strong, #cbd2da);
+	--erp-data-table-text:          var(--color-text, #1f2733);
+	--erp-data-table-text-muted:    var(--color-text-muted, #5b6675);
+	--erp-data-table-primary:       var(--color-primary, #2563eb);
+	--erp-data-table-focus-ring:    var(--color-focus-ring, rgba(37, 99, 235, 0.45));
+	--erp-data-table-radius:        var(--radius-md, 6px);
+	--erp-data-table-shadow:        var(--shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.06));
+	--erp-data-table-transition:    var(--transition-fast, 120ms ease);
+}
+
+/* Horizontal scroll lives here, on the container — vertical does not: there's
+ * no height/max-height set, so the box just grows with its rows and the page
+ * scrolls normally, instead of trapping a vertical scrollbar inside a fixed-
+ * height table. Cells don't wrap (see .data-table-cell/.data-table-th below),
+ * so wide content pushes the table past the container's width instead of
+ * wrapping — that's what overflow-x actually has to scroll. */
+.data-table-container {
+	overflow-x: auto;
+	border: 1px solid var(--erp-data-table-border);
+	border-radius: var(--erp-data-table-radius);
+	box-shadow: var(--erp-data-table-shadow);
+	background: var(--erp-data-table-surface);
+}
+
+.data-table {
+	width: 100%;
+	border-collapse: collapse;
+	color: var(--erp-data-table-text);
+	font-size: 0.8125rem;
+	font-variant-numeric: tabular-nums;
+}
+
+/* --- Header --- */
+.data-table-th {
+	background: var(--erp-data-table-header-bg);
+	border-bottom: 2px solid var(--erp-data-table-border-strong);
+	text-align: left;
+	white-space: nowrap;
+}
+
+.data-table-sort-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	width: 100%;
+	padding: 0.5rem 0.75rem;
+	background: none;
+	border: none;
+	font: inherit;
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--erp-data-table-text-muted);
+	cursor: pointer;
+	transition: color var(--erp-data-table-transition);
+}
+
+.data-table-sort-button:hover {
+	color: var(--erp-data-table-primary);
+}
+
+.data-table-sort-indicator {
+	font-size: 0.7rem;
+	color: var(--erp-data-table-text-muted);
+	opacity: 0.55;
+}
+
+/* The active sort column reads as "this determines the current order" —
+ * darkened label + full-opacity indicator, driven off the aria-sort DataTable
+ * already sets, so no extra class/JS is needed. */
+.data-table-th[aria-sort="ascending"] .data-table-sort-button,
+.data-table-th[aria-sort="descending"] .data-table-sort-button {
+	color: var(--erp-data-table-primary);
+}
+
+.data-table-th[aria-sort="ascending"] .data-table-sort-indicator,
+.data-table-th[aria-sort="descending"] .data-table-sort-indicator {
+	opacity: 1;
+}
+
+/* --- Rows & cells --- */
+.data-table-row {
+	border-bottom: 1px solid var(--erp-data-table-border);
+	transition: background var(--erp-data-table-transition);
+}
+
+.data-table-row:nth-child(even) {
+	background: var(--erp-data-table-zebra-bg);
+}
+
+.data-table-row:hover {
+	background: var(--erp-data-table-row-hover);
+}
+
+/* Selection: tint + a left accent bar (inset box-shadow, so it doesn't shift
+ * layout) — the SAP Fiori "selected list item" signature. Two classes in the
+ * selector (not just .data-table-row-selected) so this reliably beats the
+ * zebra/hover rules above regardless of source order. */
+.data-table-row.data-table-row-selected {
+	background: var(--erp-data-table-selected-bg);
+	box-shadow: inset 3px 0 0 0 var(--erp-data-table-primary);
+}
+
+.data-table-row.data-table-row-selected:hover {
+	background: var(--erp-data-table-selected-bg);
+}
+
+.data-table-cell {
+	padding: 0.4375rem 0.75rem;
+	vertical-align: middle;
+	white-space: nowrap;
+}
+
+.data-table-checkbox-cell {
+	width: 2.25rem;
+	padding-left: 0.75rem;
+}
+
+.data-table-checkbox-cell input[type="checkbox"],
+.data-table-th.data-table-checkbox-cell input[type="checkbox"] {
+	accent-color: var(--erp-data-table-primary);
+	cursor: pointer;
+}
+
+/* --- Editable cells --- */
+.data-table-cell-input {
+	/* `width: 100%` alone can't feed into the table's auto column-width
+	 * calculation (a percentage-width child contributes nothing to an
+	 * intrinsically-sized ancestor) — without a fixed-unit min-width, the
+	 * column collapses to whatever its header label needs and long values
+	 * get clipped. `min-width` is a definite length, so it counts. */
+	width: 100%;
+	min-width: 6rem;
+	padding: 0.25rem 0.375rem;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	font-variant-numeric: tabular-nums;
+	border: 1px solid transparent;
+	border-radius: var(--radius-sm, 4px);
+}
+
+.data-table-cell-input:hover {
+	border-color: var(--erp-data-table-border-strong);
+}
+
+.data-table-cell-input:focus-visible {
+	outline: 2px solid var(--erp-data-table-focus-ring);
+	outline-offset: -1px;
+	border-color: transparent;
+}
+
+/* --- Actions slot --- */
+.data-table-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	margin-top: 0.625rem;
+}

@@ -28,16 +28,9 @@
 	--erp-modal-surface:  var(--color-surface, #ffffff);
 	--erp-modal-fg:       var(--color-text, #1f2733);
 
-	--erp-modal-radius:     var(--radius-lg, 12px);
+	--erp-modal-radius:     var(--radius-lg, 8px);
 	--erp-modal-shadow:     var(--shadow-lg, 0 10px 30px rgba(15, 23, 42, 0.12));
 	--erp-modal-transition: var(--transition, 200ms ease);
-}
-
-/* Deepen the scrim on the dark palette (mirrors src/index.css). */
-@media (prefers-color-scheme: dark) {
-	:root:not([data-theme="light"]) {
-		--erp-modal-scrim: rgba(0, 0, 0, 0.62);
-	}
 }
 
 /* --- Backdrop: fixed, full-viewport, centres the dialog --- */

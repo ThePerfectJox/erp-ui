@@ -5,10 +5,12 @@
  * (e.g. erp-ui-components/layouts/index.css) should read these `--*` variables
  * instead of hard-coding values, so the whole palette can be retuned here.
  *
- * Palette intent: professional and easy on the eyes for all-day use —
- *   · soft off-white canvas instead of pure #fff
- *   · slate text instead of pure #000
- *   · one calm blue primary, with teal / violet as supporting accents
+ * Palette intent: light mode only, professional business-ERP look —
+ *   · no dark theme: this is office desktop software, not a consumer app
+ *   · soft off-white canvas instead of pure #fff, slate text instead of #000
+ *   · one confident blue primary; secondary/tertiary are muted slate + teal,
+ *     not bright accent colours — colour is reserved for brand and semantic
+ *     status, not decoration
  *   · deep slate-navy chrome instead of near-black
  * ===========================================================================*/
 
@@ -22,14 +24,14 @@
 	--color-primary-soft:       #e8f0fe;   /* tint for selected / highlighted  */
 	--color-on-primary:         #ffffff;
 
-	--color-secondary:          #0d9488;   /* teal — supporting accent         */
-	--color-secondary-hover:    #0b7d73;
-	--color-secondary-soft:     #e3f5f2;
+	--color-secondary:          #475569;   /* slate — secondary actions        */
+	--color-secondary-hover:    #334155;
+	--color-secondary-soft:     #eef1f4;
 	--color-on-secondary:       #ffffff;
 
-	--color-tertiary:           #7c3aed;   /* violet — charts, badges, focus   */
-	--color-tertiary-hover:     #6d28d9;
-	--color-tertiary-soft:      #f1eafe;
+	--color-tertiary:           #0e7490;   /* muted teal — charts, badges, focus */
+	--color-tertiary-hover:     #0c5c73;
+	--color-tertiary-soft:      #e3f2f5;
 	--color-on-tertiary:        #ffffff;
 
 	/* --- Semantic status ------------------------------------------------------ */
@@ -76,8 +78,8 @@
 
 	/* --- Radius ------------------------------------------------------------ */
 	--radius-sm:   4px;
-	--radius-md:   8px;
-	--radius-lg:   12px;
+	--radius-md:   6px;
+	--radius-lg:   8px;
 	--radius-pill: 999px;
 
 	/* --- Spacing (4px base) --------------------------------------------------- */
@@ -103,47 +105,6 @@
 	/* --- Motion --------------------------------------------------------------- */
 	--transition-fast: 120ms ease;
 	--transition:      200ms ease;
-}
-
-/* --- Dark palette --------------------------------------------------------------
- * Applies with the OS setting, or explicitly via <html data-theme="dark">.
- * <html data-theme="light"> always forces the light palette above.
- * Only the tokens that need to shift are redefined; the rest are inherited. */
-@media (prefers-color-scheme: dark) {
-	:root:not([data-theme="light"]) {
-		color-scheme: dark;
-
-		--color-primary:        #3b82f6;
-		--color-primary-hover:  #60a5fa;
-		--color-primary-active: #93c5fd;
-		--color-primary-soft:   #16233b;
-		--color-secondary-soft: #10261f;
-		--color-tertiary-soft:  #231a3d;
-
-		--color-success-soft:   #13291b;
-		--color-warning-soft:   #2e2312;
-		--color-danger-soft:    #2c1717;
-		--color-info-soft:      #10222e;
-
-		--color-bg:             #0f141b;
-		--color-surface:        #161c25;
-		--color-surface-alt:    #1c242f;
-		--color-surface-sunken: #10161d;
-
-		--color-text:           #e5e9ef;
-		--color-text-muted:     #a4adba;
-		--color-text-subtle:    #737d8c;
-		--color-text-inverse:   #0f141b;
-
-		--color-border:         #2a333f;
-		--color-border-strong:  #3a4552;
-
-		--color-chrome-bg:          #10161d;
-		--color-chrome-bg-elevated: #161c25;
-		--color-chrome-fg-muted:    #7e8896;
-		--color-chrome-hover:       #202a36;
-		--color-chrome-border:      #29333f;
-	}
 }
 
 /* -----------------------------------------------------------------------------
