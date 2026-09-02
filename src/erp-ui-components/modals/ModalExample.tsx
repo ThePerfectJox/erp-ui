@@ -1,11 +1,35 @@
 import { Modal, useModal } from "./index";
 
 /**
+ * The thing being shown. An ordinary component, unaware it's inside a modal —
+ * it just happens to be passed to <Modal> as `children`. Because sizing is no
+ * longer the container's job (see index.css), this component sets its own
+ * `max-width`, same as it would if it were rendered anywhere else on the page.
+ */
+function DeleteItemDialog({ onCancel, onConfirm }: { onCancel: () => void; onConfirm: () => void }) {
+	return (
+		<div style={{ maxWidth: "34rem" }}>
+			<h2 id="delete-item-title">Delete item</h2>
+			<p>This action cannot be undone. Are you sure you want to continue?</p>
+
+			<div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
+				<button type="button" onClick={onCancel}>
+					Cancel
+				</button>
+				<button type="button" onClick={onConfirm}>
+					Delete
+				</button>
+			</div>
+		</div>
+	);
+}
+
+/**
  * End-to-end example — mirrors layouts/LayoutExample.tsx. Not exported from the
  * barrel; render it from a route/screen to try the modal by hand.
  *
- * The modal is just a shell: the heading, copy and action buttons are all
- * `children` here, and the buttons call `dialog.onClose` directly.
+ * <Modal> only decides whether DeleteItemDialog is shown; DeleteItemDialog
+ * owns everything about what's shown, including its own width.
  */
 export default function ModalExample() {
 	const dialog = useModal();
@@ -21,17 +45,7 @@ export default function ModalExample() {
 				onClose={dialog.onClose}
 				ariaLabelledBy="delete-item-title"
 			>
-				<h2 id="delete-item-title">Delete item</h2>
-				<p>This action cannot be undone. Are you sure you want to continue?</p>
-
-				<div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
-					<button type="button" onClick={dialog.onClose}>
-						Cancel
-					</button>
-					<button type="button" onClick={dialog.onClose}>
-						Delete
-					</button>
-				</div>
+				<DeleteItemDialog onCancel={dialog.onClose} onConfirm={dialog.onClose} />
 			</Modal>
 		</>
 	);

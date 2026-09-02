@@ -1,8 +1,13 @@
 /* erp-ui-components/modals/index.css
  *
- * The backdrop (dimmed full-screen scrim), the dialog surface and the three
- * width presets. The dialog's contents are supplied by the caller as
- * `children`; this sheet only styles the shell.
+ * The backdrop (dimmed full-screen scrim) and the dialog surface. The dialog's
+ * contents are supplied by the caller as `children`; this sheet only styles
+ * the shell — it does NOT set a width of its own. `.modal` has no `width`, so
+ * as a flex item it shrink-wraps to whatever width `children` asks for (e.g.
+ * that component sets its own `max-width`); `max-width: 100%` just stops it
+ * overflowing the backdrop if the content doesn't cap itself. The container is
+ * portalled to <body>, outside the caller's DOM subtree, so this can't be done
+ * via CSS inheritance — it's on the child component to size itself.
  *
  * Colours come from the global theme (src/index.css). This sheet only aliases
  * those `--color-*` tokens into modal-scoped `--erp-modal-*` names; the second
@@ -11,7 +16,7 @@
  *
  * DOM (from Modal.tsx, portalled into <body>):
  *   <div class="modal-backdrop">
- *     <div class="modal modal-md" role="dialog">
+ *     <div class="modal" role="dialog">
  *       <div class="modal-body">   ← caller's `children`, the only scroll region
  */
 
@@ -52,7 +57,9 @@
 .modal {
 	display: flex;
 	flex-direction: column;
-	width: 100%;
+	/* No `width` here on purpose — see the file header. Capped at the
+	 * backdrop's available space so oversized content can't overflow it. */
+	max-width: 100%;
 	/* Never taller than the viewport (minus the backdrop padding) — the body
 	 * scrolls inside instead. */
 	max-height: calc(100vh - 3rem);
@@ -68,11 +75,6 @@
 .modal:focus {
 	outline: none;
 }
-
-/* --- Width presets (the `size` prop) --- */
-.modal-sm { max-width: 24rem; }
-.modal-md { max-width: 34rem; }
-.modal-lg { max-width: 52rem; }
 
 /* --- Body — the caller's content, and the only scrolling region --- */
 .modal-body {
