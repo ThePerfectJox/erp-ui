@@ -1,17 +1,31 @@
-/**
- * erp-ui-components/forms/NumberInput.tsx
- *
- * A plain `<input type="number">` — min/max/step/value/onChange all work
- * natively. Adds the `form-input` class, merged with your own `className`.
- * Styling lives in ./index.css.
- */
-
-import type { ComponentPropsWithoutRef } from "react";
-import { mergeClassNames } from "./formsUtils";
+import { useId } from "react";
+import type { ChangeEventHandler } from "react";
+import FormFieldShell from "./FormFieldShell";
 import "./index.css";
 
-export type NumberInputProps = Omit<ComponentPropsWithoutRef<"input">, "type">;
+export interface NumberInputProps {
+	id?: string;
+	name: string;
+	label: string;
+	hint?: string;
+	placeholder?: string;
+	defaultValue?: number | string;
+	value?: number | string;
+	onChange?: ChangeEventHandler<HTMLInputElement>;
+	required?: boolean;
+	disabled?: boolean;
+	min?: number;
+	max?: number;
+	step?: number;
+}
 
-export default function NumberInput({ className, ...props }: NumberInputProps) {
-	return <input type="number" className={mergeClassNames("form-input", className)} {...props} />;
+export default function NumberInput({ id, name, label, hint, ...props }: NumberInputProps) {
+	const uniqueId = useId();
+	const finalId = id ?? uniqueId;
+
+	return (
+		<FormFieldShell id={finalId} label={label} hint={hint}>
+			<input id={finalId} name={name} className="form-input" {...props} type="number" />
+		</FormFieldShell>
+	);
 }

@@ -46,23 +46,9 @@ function DeleteSelectedButton({ selected, onDelete }: { selected: Product[]; onD
 	);
 }
 
-/**
- * End-to-end example — mirrors ModalExample.tsx/LayoutExample.tsx. Not
- * exported from the barrel; render it from a route/screen to try the table
- * by hand.
- *
- * DataTable only renders/sorts/selects/edits `products`; DeleteSelectedButton
- * is a plain component built outside it, wired only through
- * `onSelectionChange` (in) and `actions` (out) — DataTable never knows the
- * button exists.
- *
- * The `maxWidth` wrapper is here on purpose, not on DataTable itself — sizing
- * is the caller's job (same rule as Modal's content). Nine columns of real
- * ERP-shaped data comfortably exceed it, so this is also the place to try the
- * table's horizontal scroll: the table scrolls sideways inside its own
- * container, the page scrolls normally if you resize the window shorter than
- * the row count — the two never fight each other.
- */
+// End-to-end example — not exported from the barrel. The `maxWidth` wrapper
+// is here, not on DataTable, since sizing is the caller's job; nine columns
+// comfortably exceed it, which is also how to try the horizontal scroll.
 export default function DataTableExample() {
 	const [products, setProducts] = useState(initialProducts);
 	const [selected, setSelected] = useState<Product[]>([]);

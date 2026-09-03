@@ -19,5 +19,5 @@ export { default as FormSection } from "./FormSection";
 export type { FormSectionProps } from "./FormSection";
 export { default as FormRow } from "./FormRow";
 export type { FormRowProps } from "./FormRow";
-export { mergeClassNames, formDataToObject, getFormValues, normalizeComboboxOptions } from "./formsUtils";
+export { formDataToObject, getFormValues, normalizeComboboxOptions } from "./formsUtils";
 export type { FormValues, FormOption } from "./formsUtils";

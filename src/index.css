@@ -1,18 +1,7 @@
-/* =============================================================================
- * erp-ui · Global theme template
- * -----------------------------------------------------------------------------
- * Single source of truth for the app's design tokens. Component style sheets
- * (e.g. erp-ui-components/layouts/index.css) should read these `--*` variables
- * instead of hard-coding values, so the whole palette can be retuned here.
- *
- * Palette intent: light mode only, professional business-ERP look —
- *   · no dark theme: this is office desktop software, not a consumer app
- *   · soft off-white canvas instead of pure #fff, slate text instead of #000
- *   · one confident blue primary; secondary/tertiary are muted slate + teal,
- *     not bright accent colours — colour is reserved for brand and semantic
- *     status, not decoration
- *   · deep slate-navy chrome instead of near-black
- * ===========================================================================*/
+/* erp-ui · Global theme template — single source of truth for design tokens.
+ * Component sheets read these `--*` variables instead of hard-coding values.
+ * Light mode only (office software, not a consumer app); colour is reserved
+ * for brand and semantic status, not decoration. */
 
 :root {
 	color-scheme: light;

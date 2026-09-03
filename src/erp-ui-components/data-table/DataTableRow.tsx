@@ -1,11 +1,5 @@
-/**
- * erp-ui-components/data-table/DataTableRow.tsx
- *
- * One body row: a checkbox cell plus one DataTableCell per column. Purely
- * presentational — receives the already-merged "effective" (post-edit) row
- * and forwards each column's current value down; DataTable owns the actual
- * selection/edit state.
- */
+// One body row: a checkbox cell plus one DataTableCell per column. Purely
+// presentational — receives the already-merged "effective" row.
 
 import type { DataTableColumnDef } from "./dataTableUtils";
 import DataTableCell from "./DataTableCell";

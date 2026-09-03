@@ -1,12 +1,7 @@
 /* erp-ui-components/forms/index.css
  *
- * Styling for plain native form elements (input/textarea/fieldset/button) —
- * every component in this module renders one of these plus a class name, so
- * this sheet is the entire visual contract. Colours come from the global
- * theme (src/index.css); this sheet only aliases those `--color-*` tokens
- * into form-scoped `--erp-form-*` names, each with a hardcoded fallback.
- *
  * Classes, by component:
+ *   .form-field, .form-label, .form-hint  ← FormFieldShell (label+control+hint)
  *   .form-input          ← TextInput, NumberInput, DateInput, Combobox
  *   .form-textarea       ← TextArea
  *   .form-option-group   ← RadioGroup/CheckboxGroup <fieldset>
@@ -16,6 +11,8 @@
  *   .form-submit-button  ← SubmitButton
  *   .form-section*       ← FormSection (title/description + its children)
  *   .form-row            ← FormRow (children side by side, desktop only)
+ *
+ * No component here accepts a `className` prop — one fixed class each.
  */
 
 :root {
@@ -32,6 +29,26 @@
 	--erp-form-focus-ring:  var(--color-focus-ring, rgba(37, 99, 235, 0.45));
 	--erp-form-radius:      var(--radius-sm, 4px);
 	--erp-form-transition:  var(--transition-fast, 120ms ease);
+}
+
+/* --- Field shell: label + control + hint (TextInput, TextArea, NumberInput,
+ * DateInput, Combobox all render this via FormFieldShell) --- */
+.form-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
+}
+
+.form-label {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--erp-form-text);
+}
+
+.form-hint {
+	margin: 0;
+	font-size: 0.8125rem;
+	color: var(--erp-form-text-muted);
 }
 
 /* --- Text-like inputs --- */
@@ -94,6 +111,11 @@
 .form-option-group:disabled {
 	background: var(--erp-form-surface-alt);
 	opacity: 0.7;
+}
+
+.form-option-group:disabled .form-option,
+.form-option-group:disabled .form-option-input {
+	cursor: not-allowed;
 }
 
 .form-group-legend {
@@ -176,10 +198,7 @@
 	gap: 1rem;
 }
 
-/* --- Rows: children stack (mobile) until the desktop breakpoint, where they
- * sit side by side and share the row equally. 768px is this module's one
- * "desktop" cutoff — it isn't a token because a media query can't consume a
- * CSS custom property. --- */
+/* --- Rows: stacked until the 768px desktop breakpoint, then side by side --- */
 .form-row {
 	display: flex;
 	flex-direction: column;

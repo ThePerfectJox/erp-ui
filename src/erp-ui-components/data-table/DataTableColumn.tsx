@@ -1,12 +1,5 @@
-/**
- * erp-ui-components/data-table/DataTableColumn.tsx
- *
- * One header cell. Every column sorts — clicking the label cycles
- * DataTable's sort state for this column through none -> asc -> desc -> none.
- * Purely presentational: DataTable owns the actual sort state and passes
- * back only this column's current direction (or null when it's not the
- * active sort column).
- */
+// One header cell. Every column sorts — clicking the label cycles through
+// none -> asc -> desc -> none; DataTable owns the actual sort state.
 
 import type { DataTableColumnDef } from "./dataTableUtils";
 

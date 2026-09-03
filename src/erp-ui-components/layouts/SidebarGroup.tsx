@@ -33,7 +33,7 @@ export default function SidebarGroup({ id, icon, description, sidebarOpen = true
 			{sidebarGroupOpenState && sidebarOpen ? (
 				<div className="sidebar-group-list">
 					{list.map((element, index) => (
-						<div key={index} className="sidebar-group-list-item-wrapper">
+						<div key={element.key ?? index} className="sidebar-group-list-item-wrapper">
 							{element}
 						</div>
 					))}

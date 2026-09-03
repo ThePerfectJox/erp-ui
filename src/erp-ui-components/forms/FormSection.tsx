@@ -1,19 +1,14 @@
-/**
- * erp-ui-components/forms/FormSection.tsx
- *
- * Groups related fields under a heading — a title, an optional description,
- * and whatever field components you nest inside it. No layout opinion beyond
- * spacing between the heading and the fields; nest a FormRow inside it if you
- * want some of those fields side by side.
- */
+// Groups fields under a title and optional description. No layout opinion
+// beyond spacing between the heading and the fields — nest a FormRow inside
+// if you want some fields side by side.
 
-import type { ReactElement } from "react";
+import type { ReactNode } from "react";
 import "./index.css";
 
 export interface FormSectionProps {
 	title: string;
 	description?: string;
-	children: ReactElement | ReactElement[];
+	children: ReactNode;
 }
 
 export default function FormSection({ title, description, children }: FormSectionProps) {

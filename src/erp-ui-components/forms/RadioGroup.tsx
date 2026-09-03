@@ -1,38 +1,26 @@
-/**
- * erp-ui-components/forms/RadioGroup.tsx
- *
- * A native <fieldset> of radio buttons sharing one `name` — the fieldset is
- * what gives the group its border (styled in ./index.css instead of left at
- * the browser default), with an optional <legend> caption. Each <input> is
- * wrapped in its own <label>, so no ids/htmlFor bookkeeping is needed for the
- * label association. `disabled` on the fieldset natively disables every
- * radio inside it.
- */
+// A native <fieldset> of radio buttons sharing one `name`. The fieldset's
+// own border/<legend> is the "label" for the group — no htmlFor needed.
 
-import type { ChangeEventHandler, ComponentPropsWithoutRef } from "react";
-import { mergeClassNames, type FormOption } from "./formsUtils";
+import type { ChangeEventHandler } from "react";
+import type { FormOption } from "./formsUtils";
 import "./index.css";
 
-export interface RadioGroupProps extends Omit<ComponentPropsWithoutRef<"fieldset">, "onChange"> {
+export interface RadioGroupProps {
+	id?: string;
 	name: string;
+	label: string;
+	hint?: string;
 	options: FormOption[];
-	legend?: string;
 	defaultValue?: string;
 	onChange?: ChangeEventHandler<HTMLInputElement>;
+	disabled?: boolean;
 }
 
-export default function RadioGroup({
-	name,
-	options,
-	legend,
-	defaultValue,
-	onChange,
-	className,
-	...fieldsetProps
-}: RadioGroupProps) {
+export default function RadioGroup({ id, name, label, hint, options, defaultValue, onChange, disabled }: RadioGroupProps) {
 	return (
-		<fieldset className={mergeClassNames("form-option-group", className)} {...fieldsetProps}>
-			{legend && <legend className="form-group-legend">{legend}</legend>}
+		<fieldset id={id} className="form-option-group" disabled={disabled}>
+			<legend className="form-group-legend">{label}</legend>
+			{hint && <p className="form-hint">{hint}</p>}
 			{options.map((option) => (
 				<label key={option.value} className="form-option">
 					<input

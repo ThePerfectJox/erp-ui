@@ -1,15 +1,6 @@
 /* erp-ui-components/layouts/index.css
- *
  * Positions the header / sidebar / main / footer and animates the sidebar
- * between its open and closed states.
- *
- * Colours come from the global theme (src/index.css). This sheet only aliases
- * those `--color-*` tokens into layout-scoped `--erp-*` names; the second
- * argument to each var() is a fallback so the layout still renders if it is
- * ever loaded without the global sheet.
- *
- * DOM (siblings, from Layout.tsx):
- *   <header> · <aside class="sidebar open|closed"> · <main> · <footer>
+ * open/closed. Colours alias the global theme (src/index.css).
  */
 
 :root {
@@ -276,10 +267,12 @@ footer {
 	flex: none;
 }
 
-/* Keyboard focus for the clickable rows (they are <div>s with onClick). */
+/* Keyboard focus for the clickable rows — divs with onClick, or a <SidebarList>
+ * wrapped in a real <a> for navigation (the <a>, not the div, gets focus then). */
 .sidebar-header:focus-visible,
 .sidebar-group-header:focus-visible,
-.sidebar-list-item:focus-visible {
+.sidebar-list-item:focus-visible,
+.sidebar-group-list-item-wrapper > a:focus-visible {
 	outline: 2px solid var(--erp-sidebar-active);
 	outline-offset: -2px;
 }

@@ -1,30 +1,7 @@
-/**
- * erp-ui-components/data-table/DataTable.tsx
- *
- * A self-contained, sortable, checkbox-selectable, inline-editable data
- * table — "self-contained" the way layouts/Layout.tsx is: state lives here
- * via plain useState, no external controlling hook, no context.
- *
- *  · `data` is either an array or a dictionary (`Record<id, row>`); either
- *    way it's normalized to `{ id, original }[]` by dataTableUtils.
- *    normalizeRows — see that file for how row ids are derived.
- *
- *  · Editing a cell (DataTableCell -> DataTableRow -> here) stores the typed
- *    value in an `edits` overlay and auto-selects that row. Unchecking a
- *    row's checkbox clears its overlay entry, reverting it to the original
- *    data — "select all" unchecked does the same for every row it deselects.
- *
- *  · `onSelectionChange` fires synchronously (no effect) with the current,
- *    possibly-edited row objects for whatever is selected. That's the whole
- *    contract with `actions`: build a component elsewhere that reads its own
- *    state (fed by `onSelectionChange`) and hand it in as `actions` — this
- *    component only decides where it renders (below the table), never what
- *    it does.
- *
- * Sorting/comparison/normalization/edit-coercion logic all lives in
- * ./dataTableUtils.ts, not here — this file is composition and event wiring.
- * Styling lives in ./index.css.
- */
+// Self-contained sortable/selectable/inline-editable table — state lives
+// here via plain useState (no controlling hook, no context), sort/compare/
+// edit logic lives in ./dataTableUtils.ts. Unchecking a row's checkbox (or
+// "select all") reverts that row's edits back to its original data.
 
 import { useId, useState, type ReactNode } from "react";
 import {

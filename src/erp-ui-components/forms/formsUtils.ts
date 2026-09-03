@@ -1,23 +1,8 @@
-/**
- * erp-ui-components/forms/formsUtils.ts
- *
- * Plain logic for the forms module — no React, no JSX. className merging,
- * FormData -> plain object conversion, and shared option types all live
- * here, so the components themselves stay thin wrappers around their native
- * HTML element plus a class name.
- */
-
-/** Joins truthy class names with a space — falsy entries (undefined/false/null) drop out. */
-export function mergeClassNames(...classNames: Array<string | undefined | false | null>): string {
-	return classNames.filter(Boolean).join(" ");
-}
+// Plain logic for the forms module — no React, no JSX.
 
 export type FormValues = Record<string, FormDataEntryValue | FormDataEntryValue[]>;
 
-/**
- * Repeated field names (a checkbox group, a multi-select) collect into an
- * array instead of the last one silently overwriting the rest.
- */
+/** Repeated field names (a checkbox group) collect into an array instead of overwriting each other. */
 export function formDataToObject(formData: FormData): FormValues {
 	const values: FormValues = {};
 	for (const [key, value] of formData.entries()) {

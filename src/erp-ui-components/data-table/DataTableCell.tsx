@@ -1,11 +1,5 @@
-/**
- * erp-ui-components/data-table/DataTableCell.tsx
- *
- * One body cell. Editable columns render an always-live `<input>` — no
- * separate "enter edit mode" step, like typing straight into a spreadsheet
- * cell — everything else renders as plain text. Knows nothing about rows,
- * ids or selection; it only reports the raw string it was typed.
- */
+// One body cell. Editable columns render an always-live `<input>`; everything
+// else renders as plain text.
 
 import type { DataTableColumnDef } from "./dataTableUtils";
 

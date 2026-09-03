@@ -1,11 +1,4 @@
-/**
- * erp-ui-components/data-table/dataTableUtils.ts
- *
- * Plain data logic for the data-table module — no React, no JSX. Row
- * normalization, sorting and the value comparator live here instead of
- * inline in DataTable.tsx so that component stays focused on rendering and
- * wiring, and this logic can be read (and tested) on its own.
- */
+// Plain data logic for the data-table module — no React, no JSX.
 
 export type DataTableSortDirection = "asc" | "desc";
 

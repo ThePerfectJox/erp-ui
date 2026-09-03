@@ -1,17 +1,6 @@
 /* erp-ui-components/data-table/index.css
- *
- * The table shell, header, rows, checkboxes and editable-cell inputs. Colours
- * come from the global theme (src/index.css); this sheet only aliases those
- * `--color-*`/`--radius-*`/`--shadow-*`/`--transition-*` tokens into
- * `--erp-data-table-*` names, each with a hardcoded fallback so the module
- * still renders standalone.
- *
- * Look: a gridline-free enterprise data grid — SAP Fiori's row rhythm and
- * its selected-row left accent bar, sized for readability rather than
- * maximum density (there's no reason to fight a Fiori "Compact" row height
- * when the data isn't virtualized). Zebra striping (even rows) and tabular
- * figures keep numeric data scannable, but there are no vertical rules —
- * that reads as the older heavy Excel-grid style, not a modern one.
+ * Table shell, header, rows, checkboxes, editable-cell inputs. Colours alias
+ * the global theme (src/index.css). Gridline-free, SAP Fiori-ish row rhythm.
  *
  * DOM (from DataTable.tsx):
  *   <div class="data-table-container">
@@ -43,12 +32,9 @@
 	--erp-data-table-transition:    var(--transition-fast, 120ms ease);
 }
 
-/* Horizontal scroll lives here, on the container — vertical does not: there's
- * no height/max-height set, so the box just grows with its rows and the page
- * scrolls normally, instead of trapping a vertical scrollbar inside a fixed-
- * height table. Cells don't wrap (see .data-table-cell/.data-table-th below),
- * so wide content pushes the table past the container's width instead of
- * wrapping — that's what overflow-x actually has to scroll. */
+/* No height/max-height, so vertical overflow just grows the page; cells don't
+ * wrap, so wide content overflows the container's width instead — that's
+ * what overflow-x scrolls. */
 .data-table-container {
 	overflow-x: auto;
 	border: 1px solid var(--erp-data-table-border);
@@ -99,9 +85,7 @@
 	opacity: 0.55;
 }
 
-/* The active sort column reads as "this determines the current order" —
- * darkened label + full-opacity indicator, driven off the aria-sort DataTable
- * already sets, so no extra class/JS is needed. */
+/* Active sort column: driven off DataTable's own aria-sort attribute. */
 .data-table-th[aria-sort="ascending"] .data-table-sort-button,
 .data-table-th[aria-sort="descending"] .data-table-sort-button {
 	color: var(--erp-data-table-primary);
@@ -126,10 +110,8 @@
 	background: var(--erp-data-table-row-hover);
 }
 
-/* Selection: tint + a left accent bar (inset box-shadow, so it doesn't shift
- * layout) — the SAP Fiori "selected list item" signature. Two classes in the
- * selector (not just .data-table-row-selected) so this reliably beats the
- * zebra/hover rules above regardless of source order. */
+/* Tint + a left accent bar (inset box-shadow, so it doesn't shift layout).
+ * Two classes in the selector so this reliably beats zebra/hover above. */
 .data-table-row.data-table-row-selected {
 	background: var(--erp-data-table-selected-bg);
 	box-shadow: inset 3px 0 0 0 var(--erp-data-table-primary);
@@ -158,11 +140,9 @@
 
 /* --- Editable cells --- */
 .data-table-cell-input {
-	/* `width: 100%` alone can't feed into the table's auto column-width
-	 * calculation (a percentage-width child contributes nothing to an
-	 * intrinsically-sized ancestor) — without a fixed-unit min-width, the
-	 * column collapses to whatever its header label needs and long values
-	 * get clipped. `min-width` is a definite length, so it counts. */
+	/* min-width is required: `width: 100%` alone doesn't count toward the
+	 * table's auto column-width calc, so the column would collapse to its
+	 * header's width and clip long values. */
 	width: 100%;
 	min-width: 7rem;
 	padding: 0.375rem 0.5rem;

@@ -1,19 +1,28 @@
-/**
- * erp-ui-components/forms/TextInput.tsx
- *
- * A plain `<input type="text">` — every native attribute (value, onChange,
- * placeholder, required, disabled, ...) works exactly as it would on the
- * element itself. The only thing this adds is the `form-input` class, merged
- * with whatever `className` you pass in, so you don't retype it at every
- * call site. Styling lives in ./index.css.
- */
-
-import type { ComponentPropsWithoutRef } from "react";
-import { mergeClassNames } from "./formsUtils";
+import { useId } from "react";
+import type { ChangeEventHandler } from "react";
+import FormFieldShell from "./FormFieldShell";
 import "./index.css";
 
-export type TextInputProps = Omit<ComponentPropsWithoutRef<"input">, "type">;
+export interface TextInputProps {
+	id?: string;
+	name: string;
+	label: string;
+	hint?: string;
+	placeholder?: string;
+	defaultValue?: string;
+	value?: string;
+	onChange?: ChangeEventHandler<HTMLInputElement>;
+	required?: boolean;
+	disabled?: boolean;
+}
 
-export default function TextInput({ className, ...props }: TextInputProps) {
-	return <input type="text" className={mergeClassNames("form-input", className)} {...props} />;
+export default function TextInput({ id, name, label, hint, ...props }: TextInputProps) {
+	const uniqueId = useId();
+	const finalId = id ?? uniqueId;
+
+	return (
+		<FormFieldShell id={finalId} label={label} hint={hint}>
+			<input id={finalId} name={name} className="form-input" {...props} type="text" />
+		</FormFieldShell>
+	);
 }

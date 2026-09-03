@@ -1,17 +1,28 @@
-/**
- * erp-ui-components/forms/DateInput.tsx
- *
- * A plain `<input type="date">` — the browser's native date picker, native
- * "yyyy-mm-dd" value. Adds the `form-input` class, merged with your own
- * `className`. Styling lives in ./index.css.
- */
-
-import type { ComponentPropsWithoutRef } from "react";
-import { mergeClassNames } from "./formsUtils";
+import { useId } from "react";
+import type { ChangeEventHandler } from "react";
+import FormFieldShell from "./FormFieldShell";
 import "./index.css";
 
-export type DateInputProps = Omit<ComponentPropsWithoutRef<"input">, "type">;
+export interface DateInputProps {
+	id?: string;
+	name: string;
+	label: string;
+	hint?: string;
+	placeholder?: string;
+	defaultValue?: string;
+	value?: string;
+	onChange?: ChangeEventHandler<HTMLInputElement>;
+	required?: boolean;
+	disabled?: boolean;
+}
 
-export default function DateInput({ className, ...props }: DateInputProps) {
-	return <input type="date" className={mergeClassNames("form-input", className)} {...props} />;
+export default function DateInput({ id, name, label, hint, ...props }: DateInputProps) {
+	const uniqueId = useId();
+	const finalId = id ?? uniqueId;
+
+	return (
+		<FormFieldShell id={finalId} label={label} hint={hint}>
+			<input id={finalId} name={name} className="form-input" {...props} type="date" />
+		</FormFieldShell>
+	);
 }
