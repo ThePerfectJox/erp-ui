@@ -1,6 +1,12 @@
 /* erp-ui-components/data-table/index.css
  * Table shell, header, rows, checkboxes, editable-cell inputs. Colours alias
- * the global theme (src/index.css). Gridline-free, SAP Fiori-ish row rhythm.
+ * the global theme (src/index.css). Gridline-free, dense row rhythm.
+ *
+ * The three row states are deliberately encoded differently so they never get
+ * confused at a glance: zebra is a near-invisible tint, hover is a neutral
+ * grey wash, and selected is a darker tint plus a 3px graphite rail and a
+ * weight bump. With no brand hue the tint gap between hover and selected is
+ * narrow, so here the rail is doing the real work, not reinforcing it.
  *
  * DOM (from DataTable.tsx):
  *   <div class="data-table-container">
@@ -16,20 +22,21 @@
  */
 
 :root {
-	--erp-data-table-surface:       var(--color-surface, #ffffff);
-	--erp-data-table-header-bg:     var(--color-surface-alt, #f1f3f5);
-	--erp-data-table-zebra-bg:      var(--color-surface-alt, #f1f3f5);
-	--erp-data-table-row-hover:     var(--color-border, #e2e5ea);
-	--erp-data-table-selected-bg:   var(--color-primary-soft, #e8f0fe);
-	--erp-data-table-border:        var(--color-border, #e2e5ea);
-	--erp-data-table-border-strong: var(--color-border-strong, #cbd2da);
-	--erp-data-table-text:          var(--color-text, #1f2733);
-	--erp-data-table-text-muted:    var(--color-text-muted, #5b6675);
-	--erp-data-table-primary:       var(--color-primary, #2563eb);
-	--erp-data-table-focus-ring:    var(--color-focus-ring, rgba(37, 99, 235, 0.45));
-	--erp-data-table-radius:        var(--radius-md, 6px);
-	--erp-data-table-shadow:        var(--shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.06));
-	--erp-data-table-transition:    var(--transition-fast, 120ms ease);
+	--erp-data-table-surface:        var(--color-surface, #ffffff);
+	--erp-data-table-header-bg:      var(--color-surface-sunken, #f0f0f0);
+	--erp-data-table-zebra-bg:       var(--color-surface-alt, #fafbfc);
+	--erp-data-table-row-hover:      var(--color-surface-sunken, #f0f0f0);
+	--erp-data-table-selected-bg:    var(--color-primary-soft, #e3e3e3);
+	--erp-data-table-selected-hover: var(--color-primary-soft-hover, #d6d6d6);
+	--erp-data-table-border:         var(--color-border, #e5e5e5);
+	--erp-data-table-border-strong:  var(--color-border-strong, #cccccc);
+	--erp-data-table-text:           var(--color-text, #171717);
+	--erp-data-table-text-muted:     var(--color-text-muted, #5c5c5c);
+	--erp-data-table-primary:        var(--color-primary, #1a1a1a);
+	--erp-data-table-focus-ring:     var(--color-focus-ring, rgba(23, 23, 23, 0.25));
+	--erp-data-table-radius:         var(--radius-md, 8px);
+	--erp-data-table-shadow:         var(--shadow-md, 0 1px 3px rgba(0, 0, 0, 0.08));
+	--erp-data-table-transition:     var(--transition-fast, 120ms ease);
 }
 
 /* No height/max-height, so vertical overflow just grows the page; cells don't
@@ -47,14 +54,16 @@
 	width: 100%;
 	border-collapse: collapse;
 	color: var(--erp-data-table-text);
-	font-size: 0.875rem;
+	font-size: var(--text-sm, 0.8125rem);
+	/* Digits share one advance width, so figures line up column-wise — the
+	 * single most useful thing you can do to a table of numbers. */
 	font-variant-numeric: tabular-nums;
 }
 
 /* --- Header --- */
 .data-table-th {
 	background: var(--erp-data-table-header-bg);
-	border-bottom: 2px solid var(--erp-data-table-border-strong);
+	border-bottom: 1px solid var(--erp-data-table-border-strong);
 	text-align: left;
 	white-space: nowrap;
 }
@@ -62,30 +71,42 @@
 .data-table-sort-button {
 	display: inline-flex;
 	align-items: center;
+	justify-content: flex-start;
 	gap: 0.375rem;
 	width: 100%;
-	padding: 0.75rem 0.875rem;
+	padding: 0.6875rem 0.875rem;
 	background: none;
 	border: none;
+	border-radius: 0;
 	font: inherit;
-	font-size: 0.8125rem;
-	font-weight: 600;
+	font-size: var(--text-xs, 0.6875rem);
+	font-weight: var(--weight-bold, 700);
+	letter-spacing: var(--tracking-wide, 0.06em);
+	text-transform: uppercase;
 	color: var(--erp-data-table-text-muted);
 	cursor: pointer;
-	transition: color var(--erp-data-table-transition);
+	transition: color var(--erp-data-table-transition), background var(--erp-data-table-transition);
 }
 
 .data-table-sort-button:hover {
+	background: transparent;
 	color: var(--erp-data-table-primary);
 }
 
 .data-table-sort-indicator {
-	font-size: 0.7rem;
+	font-size: 0.65rem;
 	color: var(--erp-data-table-text-muted);
-	opacity: 0.55;
+	opacity: 0.5;
 }
 
 /* Active sort column: driven off DataTable's own aria-sort attribute. */
+.data-table-th[aria-sort="ascending"],
+.data-table-th[aria-sort="descending"] {
+	/* the sorted column gets a brand underline, so which column is driving the
+	 * order is obvious even when the arrow is off the side of a wide table */
+	box-shadow: inset 0 -2px 0 0 var(--erp-data-table-primary);
+}
+
 .data-table-th[aria-sort="ascending"] .data-table-sort-button,
 .data-table-th[aria-sort="descending"] .data-table-sort-button {
 	color: var(--erp-data-table-primary);
@@ -93,6 +114,7 @@
 
 .data-table-th[aria-sort="ascending"] .data-table-sort-indicator,
 .data-table-th[aria-sort="descending"] .data-table-sort-indicator {
+	color: var(--erp-data-table-primary);
 	opacity: 1;
 }
 
@@ -100,6 +122,10 @@
 .data-table-row {
 	border-bottom: 1px solid var(--erp-data-table-border);
 	transition: background var(--erp-data-table-transition);
+}
+
+.data-table-row:last-child {
+	border-bottom: none;
 }
 
 .data-table-row:nth-child(even) {
@@ -117,12 +143,16 @@
 	box-shadow: inset 3px 0 0 0 var(--erp-data-table-primary);
 }
 
+.data-table-row.data-table-row-selected .data-table-cell {
+	font-weight: var(--weight-medium, 500);
+}
+
 .data-table-row.data-table-row-selected:hover {
-	background: var(--erp-data-table-selected-bg);
+	background: var(--erp-data-table-selected-hover);
 }
 
 .data-table-cell {
-	padding: 0.625rem 0.875rem;
+	padding: 0.5625rem 0.875rem;
 	vertical-align: middle;
 	white-space: nowrap;
 }
@@ -134,34 +164,41 @@
 
 .data-table-checkbox-cell input[type="checkbox"],
 .data-table-th.data-table-checkbox-cell input[type="checkbox"] {
+	width: 0.9375rem;
+	height: 0.9375rem;
 	accent-color: var(--erp-data-table-primary);
 	cursor: pointer;
 }
 
-/* --- Editable cells --- */
+/* --- Editable cells ---
+ * Invisible until you approach them: no chrome at rest, a border on hover to
+ * advertise that the cell is editable, a brand ring while editing. */
 .data-table-cell-input {
 	/* min-width is required: `width: 100%` alone doesn't count toward the
 	 * table's auto column-width calc, so the column would collapse to its
 	 * header's width and clip long values. */
 	width: 100%;
 	min-width: 7rem;
-	padding: 0.375rem 0.5rem;
+	padding: 0.3125rem 0.5rem;
 	background: transparent;
 	color: inherit;
 	font: inherit;
 	font-variant-numeric: tabular-nums;
 	border: 1px solid transparent;
-	border-radius: var(--radius-sm, 4px);
+	border-radius: var(--radius-sm, 5px);
+	transition: border-color var(--erp-data-table-transition), background var(--erp-data-table-transition);
 }
 
 .data-table-cell-input:hover {
+	background: var(--erp-data-table-surface);
 	border-color: var(--erp-data-table-border-strong);
 }
 
 .data-table-cell-input:focus-visible {
-	outline: 2px solid var(--erp-data-table-focus-ring);
-	outline-offset: -1px;
-	border-color: transparent;
+	outline: none;
+	background: var(--erp-data-table-surface);
+	border-color: var(--erp-data-table-primary);
+	box-shadow: 0 0 0 3px var(--erp-data-table-focus-ring);
 }
 
 /* --- Actions slot --- */

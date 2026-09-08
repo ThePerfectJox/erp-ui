@@ -11,7 +11,7 @@ import sidebarOpenedIcon from "../assets/menu.svg";
 import sidebarClosedIcon from "../assets/menu-close.svg";
 
 interface LayoutProps {
-	sidebarGroups: ReactElement<{ sidebarOpen?: boolean }>[],
+	sidebarGroups: ReactElement<{ sidebarOpen?: boolean; onRequestSidebarOpen?: () => void }>[],
 	content: ReactNode,
 }
 
@@ -20,12 +20,21 @@ export default function Layout({ sidebarGroups, content }: LayoutProps) {
 	const handleClick = () => {
 		setSidebarOpenState((prevOpen) => !prevOpen);
 	};
+	// Collapsed, the sidebar is an icon rail; clicking a group icon has to be
+	// able to widen it again. Only Layout owns that state, so it hands the
+	// groups a one-way "open" rather than the toggle, which from the rail could
+	// only ever close something that's already closed.
+	const handleRequestSidebarOpen = () => setSidebarOpenState(true);
 
 	const headerText = "ERP-UI"
 	const footerText = `© ${new Date().getFullYear()} JoxNeis. All rights reserved`
 
 	const groupsWithState = sidebarGroups.map((group, index) =>
-		cloneElement(group, { key: group.key ?? index, sidebarOpen: sidebarOpenState })
+		cloneElement(group, {
+			key: group.key ?? index,
+			sidebarOpen: sidebarOpenState,
+			onRequestSidebarOpen: handleRequestSidebarOpen,
+		})
 	);
 
 	return (

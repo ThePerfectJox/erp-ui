@@ -12,11 +12,13 @@ function DeleteItemDialog({ onCancel, onConfirm }: { onCancel: () => void; onCon
 			<h2 id="delete-item-title">Delete item</h2>
 			<p>This action cannot be undone. Are you sure you want to continue?</p>
 
+			{/* The destructive action is the filled red one; Cancel stays a quiet
+			    outlined button, so the two can never be confused mid-click. */}
 			<div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
 				<button type="button" onClick={onCancel}>
 					Cancel
 				</button>
-				<button type="button" onClick={onConfirm}>
+				<button type="button" className="button-danger" onClick={onConfirm}>
 					Delete
 				</button>
 			</div>
@@ -36,7 +38,7 @@ export default function ModalExample() {
 
 	return (
 		<>
-			<button type="button" onClick={dialog.onOpen}>
+			<button type="button" className="button-primary" onClick={dialog.onOpen}>
 				Open modal
 			</button>
 

@@ -40,7 +40,7 @@ const columns: DataTableColumnDef<Product>[] = [
 function DeleteSelectedButton({ selected, onDelete }: { selected: Product[]; onDelete: (ids: string[]) => void }) {
 	if (selected.length === 0) return null;
 	return (
-		<button type="button" onClick={() => onDelete(selected.map((row) => row.id))}>
+		<button type="button" className="button-danger" onClick={() => onDelete(selected.map((row) => row.id))}>
 			Delete {selected.length} selected
 		</button>
 	);

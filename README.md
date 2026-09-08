@@ -3,8 +3,9 @@
 A hand-rolled React 19 + TypeScript component library for a business-ERP style
 admin app — no UI framework or table/form library underneath. Everything in
 `src/erp-ui-components/` is built from plain HTML elements and CSS custom
-properties, styled as a light-mode-only, professional/dense (SAP Fiori-ish)
-theme.
+properties, styled as a light-mode-only, professional/dense ERP theme:
+monochrome graphite on light chrome, at a 14px base. There is no brand hue —
+the only colour on screen is semantic status.
 
 Open [`MasterExample`](src/erp-ui-components/MasterExample.tsx) (wired up as
 the app's only screen, in `src/App.tsx`) to see every component in one page.
@@ -64,7 +65,41 @@ Single source of truth for colour, spacing, radius, shadow and typography,
 as CSS custom properties on `:root`. Light mode only — there is no dark
 theme; this is desktop office software, not a consumer app. Colour is
 reserved for the brand and semantic status (success/warning/danger/info),
-not decoration.
+not decoration. There is no brand hue at all: `--color-primary` is a neutral
+near-black (`#1a1a1a`) and carries every interactive role — filled buttons,
+rails, selection, focus. A red button therefore *means* something, because it
+is the only red thing in the room.
+
+Four rules keep the palette usable:
+
+1. **Everything that carries text clears WCAG AA (4.5:1)** on its own
+   background — including `--color-text-muted` on the table header fill and
+   `--color-chrome-fg-muted` on the sidebar. `#1a1a1a` on white is 17.4:1, and
+   white on it is the same, so `--color-primary` is safe as fill *and* as text
+   — a saturated brand colour needs two tones to manage that.
+2. **Every neutral is a true grey: R, G and B are equal at every step.** This
+   is load-bearing, not pedantry. A "graphite" carrying even a few points more
+   blue than red (`#1f242c`, say) reads as *navy* on a real screen, most
+   obviously at button size — which defeats the point of having no brand hue.
+   If you retheme, keep the spread at zero or the greys will pick a side.
+3. **Nothing is distinguished by hue alone**, because there is no hue to
+   distinguish it by. Links are underlined at rest (colour can no longer mark
+   them), the selected table row carries a rail and a weight bump, the sorted
+   column carries a rule. The one tight spot is `--color-primary-soft`: the
+   selected row and the hovered row separate on tone alone, so the rail is
+   doing the real work there rather than reinforcing a colour difference.
+4. **The status hues that remain sit far apart on the wheel** — blue 224° ·
+   violet 262° · green 142° · amber 30° · red 0° — so a row's state is legible
+   from its colour alone, not only from its label.
+
+`--color-primary-hover` goes *lighter* than the base, not darker: on a
+near-black fill, darkening barely registers.
+
+Type is set at a **14px base** (`--text-md`), the density business software is
+actually read at; `--text-lg`/`--text-xl`/`--text-2xl` climb from there, and
+`--weight-*` covers 400–700. Small all-caps labels (table headers, sidebar
+group names, fieldset legends) use `--tracking-wide`; headings use
+`--tracking-tight`.
 
 Module stylesheets never hard-code a global colour — they alias it:
 
@@ -74,6 +109,24 @@ Module stylesheets never hard-code a global colour — they alias it:
 
 To retheme the app, edit `src/index.css`; every module picks the change up
 automatically.
+
+### Buttons
+
+`src/index.css` styles the bare `button` element, so a plain `<button>` — a
+modal's Cancel, say — is already a house button rather than an OS one. Two
+modifier classes cover the rest, and they are the only *filled* buttons in the
+system, so on any screen the affirmative action and the destructive one each
+stand alone:
+
+```html
+<button>Cancel</button>                            <!-- neutral, outlined -->
+<button class="button-primary">Save</button>       <!-- filled graphite -->
+<button class="button-danger">Delete</button>      <!-- filled red -->
+```
+
+Forms keep their own `.form-submit-button` (see `forms/`), which is the same
+filled-graphite treatment applied by `SubmitButton` without needing a class at
+the call site.
 
 ## `erp-ui-settings.ts`
 
@@ -112,11 +165,22 @@ import { Layout, SidebarGroup, SidebarList } from "./erp-ui-components/layouts";
 ```
 
 - **`Layout`** owns the sidebar open/closed state itself (no external hook)
-  and clones each `sidebarGroups` element with the current `sidebarOpen`.
+  and clones each `sidebarGroups` element with the current `sidebarOpen` plus
+  an `onRequestSidebarOpen` callback. The callback is deliberately one-way
+  ("open"), not the toggle — a group can only ever be clicked from the rail,
+  where the only useful outcome is opening.
+- **Collapsing doesn't hide the sidebar, it narrows it to a 3.5rem icon rail**
+  (`--erp-sidebar-rail-width`). Every group icon stays on screen and stays
+  clickable, and clicking one reopens the sidebar *and* expands that group, so
+  the single click a rail affords lands on the group's contents. The label and
+  chevron are `display: none` at that width; `SidebarGroup` re-attaches the
+  name as `title`/`aria-label` while collapsed so the row isn't an unlabelled
+  target. A group given no `icon` renders its first initial instead, which is
+  visible only in the rail.
 - **`SidebarGroup`** is its own collapsible section (`defaultExpanded` to
-  start it open); `disabled`-style behavior isn't a thing here, but passing
-  `sidebarOpen={false}` (done automatically by `Layout` when the whole
-  sidebar collapses) locks it shut.
+  start it open). Passing `sidebarOpen={false}` (done automatically by
+  `Layout` when the sidebar collapses) hides its list and switches the header
+  into its rail presentation.
 - **`SidebarList`** is one row; wrap it in a real `<a href="#section">` (as
   `MasterExample`'s `NavLink` does) for anchor-jump navigation — the
   `:focus-visible` outline in `index.css` covers both the plain-div and the

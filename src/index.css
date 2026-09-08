@@ -1,77 +1,112 @@
 /* erp-ui · Global theme template — single source of truth for design tokens.
- * Component sheets read these `--*` variables instead of hard-coding values.
- * Light mode only (office software, not a consumer app); colour is reserved
- * for brand and semantic status, not decoration. */
+ * Component sheets read these --* variables instead of hard-coding values.
+ *
+ * Direction: monochrome graphite on light chrome. There is no brand hue at
+ * all — graphite carries every interactive role (filled buttons, rails,
+ * selection, focus), and the only colour that reaches the screen is semantic
+ * status. A red button therefore means something, because it is the sole red
+ * thing in the room. Light mode only (office software, not a consumer app).
+ *
+ * Three rules hold the palette together:
+ *  1. Every colour used for text clears WCAG AA (4.5:1) on its own background.
+ *  2. Nothing is distinguished by hue alone — with no brand colour there is no
+ *     hue to distinguish it by. Links carry an underline, the selected table
+ *     row carries a rail, sorted columns carry a rule. See the note on
+ *     --color-primary-soft for the one place this gets tight.
+ *  3. The status hues that remain sit far apart on the wheel (blue 224° ·
+ *     violet 262° · green 142° · amber 30° · red 0°), so a row's state is
+ *     legible from its colour alone, not only from its label.
+ */
 
 :root {
 	color-scheme: light;
 
-	/* --- Brand ------------------------------------------------------------- */
-	--color-primary:            #2563eb;   /* calm, professional blue          */
-	--color-primary-hover:      #1d4ed8;
-	--color-primary-active:     #1e40af;
-	--color-primary-soft:       #e8f0fe;   /* tint for selected / highlighted  */
+	/* --- Brand -------------------------------------------------------------
+	 * Neutral grey, not a hue — R, G and B are equal at every step. That matters
+	 * more than it sounds: a "graphite" with even a few points more blue than
+	 * red (#1f242c, say) reads as navy on a real screen, especially at button
+	 * size. 17.4:1 on white, and white on it is the same, so it is safe as fill
+	 * and as text without the two-tone workaround a saturated brand colour
+	 * needs. Hover goes *lighter* — on a near-black fill that reads as a
+	 * response where going darker barely registers. */
+	--color-primary:            #1a1a1a;
+	--color-primary-hover:      #333333;
+	--color-primary-active:     #000000;
+	/* Selection tint. With no hue available this has to separate from the row
+	 * hover (--color-surface-sunken) on tone alone, which is a narrow gap — so
+	 * the selected row also gets a rail and a weight bump in data-table. */
+	--color-primary-soft:       #e3e3e3;
+	--color-primary-soft-hover: #d6d6d6;
+	--color-primary-muted:      #b0b0b0;   /* disabled brand                    */
 	--color-on-primary:         #ffffff;
 
-	--color-secondary:          #475569;   /* slate — secondary actions        */
-	--color-secondary-hover:    #334155;
-	--color-secondary-soft:     #eef1f4;
+	--color-secondary:          #3d3d3d;   /* graphite — secondary actions      */
+	--color-secondary-hover:    #262626;
+	--color-secondary-soft:     #f0f0f0;
 	--color-on-secondary:       #ffffff;
 
-	--color-tertiary:           #0e7490;   /* muted teal — charts, badges, focus */
-	--color-tertiary-hover:     #0c5c73;
-	--color-tertiary-soft:      #e3f2f5;
+	--color-tertiary:           #6d28d9;   /* violet — charts, badges, accents  */
+	--color-tertiary-hover:     #5b21b6;
+	--color-tertiary-soft:      #f0e9fd;
 	--color-on-tertiary:        #ffffff;
 
-	/* --- Semantic status ------------------------------------------------------ */
+	/* --- Semantic status ---------------------------------------------------- */
 	--color-success:            #15803d;
-	--color-success-soft:       #e6f4ea;
+	--color-success-soft:       #e6f5eb;
 	--color-warning:            #b45309;
-	--color-warning-soft:       #fbefdc;
-	--color-danger:             #b91c1c;
-	--color-danger-soft:        #fbe9e9;
-	--color-info:               #0369a1;
-	--color-info-soft:          #e4f1f8;
+	--color-warning-soft:       #fdf0dc;
+	--color-danger:             #dc2626;
+	--color-danger-hover:       #b91c1c;
+	--color-danger-soft:        #fdeaea;
+	--color-info:               #1d4ed8;
+	--color-info-soft:          #e7edfd;
 
 	/* --- Surfaces ----------------------------------------------------------- */
-	--color-bg:                 #f6f7f9;   /* app canvas                        */
-	--color-surface:            #ffffff;   /* cards, panels, tables            */
-	--color-surface-alt:        #f1f3f5;   /* zebra rows, hover on light       */
-	--color-surface-sunken:     #eceef1;   /* wells, inset areas              */
+	--color-bg:                 #f7f7f7;   /* app canvas — grey, so white cards */
+	--color-surface:            #ffffff;   /* and the white chrome both read    */
+	--color-surface-alt:        #fafafa;   /* zebra rows, hover on light        */
+	--color-surface-sunken:     #f0f0f0;   /* wells, table headers, inset areas */
 
 	/* --- Text ---------------------------------------------------------------- */
-	--color-text:               #1f2733;   /* primary copy — slate, not black  */
-	--color-text-muted:         #5b6675;   /* secondary copy, labels          */
-	--color-text-subtle:        #8a94a3;   /* captions, placeholders          */
-	--color-text-inverse:       #f8fafc;   /* copy on dark chrome / buttons    */
+	--color-text:               #171717;   /* primary copy — graphite, not black */
+	--color-text-muted:         #5c5c5c;   /* secondary copy, labels            */
+	--color-text-subtle:        #707070;   /* captions, placeholders            */
+	--color-text-inverse:       #fafafa;   /* copy on filled buttons            */
 	--color-link:               var(--color-primary);
 
-	/* --- Lines & focus ----------------------------------------------------- */
-	--color-border:             #e2e5ea;   /* default hairline                 */
-	--color-border-strong:      #cbd2da;   /* dividers that need to read      */
-	--color-focus-ring:         rgba(37, 99, 235, 0.45);
+	/* --- Lines & focus ------------------------------------------------------- */
+	--color-border:             #e5e5e5;   /* default hairline                  */
+	--color-border-strong:      #cccccc;   /* dividers and inputs that must read */
+	--color-focus-ring:         rgba(23, 23, 23, 0.25);
 
-	/* --- App chrome (header / sidebar / footer) --------------------------- */
-	--color-chrome-bg:          #1f2a37;   /* deep slate-navy, softer than #111 */
-	--color-chrome-bg-elevated: #263241;   /* header / raised chrome           */
-	--color-chrome-fg:          #cfd6df;   /* soft light grey, not pure white  */
-	--color-chrome-fg-muted:    #8b95a3;   /* group headings, footer text     */
-	--color-chrome-hover:       #2c3a4c;   /* row hover on dark chrome        */
-	--color-chrome-active:      #4b8bf5;   /* selected-row accent bar         */
-	--color-chrome-border:      #33404f;   /* dividers on dark chrome         */
+	/* --- App chrome (header / sidebar / footer) ------------------------------
+	 * Light chrome: the frame is white and the canvas behind the work is grey,
+	 * so the two separate on tone rather than on a heavy dark block. That puts
+	 * the burden on --color-chrome-border to do real work; it is deliberately
+	 * a step stronger than a hairline. */
+	--color-chrome-bg:          #ffffff;   /* sidebar                           */
+	--color-chrome-bg-elevated: #ffffff;   /* header / footer                   */
+	--color-chrome-fg:          #1a1a1a;   /* nav labels                        */
+	--color-chrome-fg-muted:    #707070;   /* group headings, footer text       */
+	--color-chrome-hover:       #f2f2f2;   /* row hover on light chrome         */
+	--color-chrome-active:      #1a1a1a;   /* selected-row accent bar           */
+	--color-chrome-border:      #e5e5e5;   /* dividers on light chrome          */
 
-	/* --- Elevation --------------------------------------------------------- */
-	--shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
-	--shadow-md: 0 2px 8px rgba(15, 23, 42, 0.08);
-	--shadow-lg: 0 10px 30px rgba(15, 23, 42, 0.12);
+	/* --- Elevation ----------------------------------------------------------- */
+	/* Layered rather than one blur: a tight contact shadow plus a wide soft one
+	 * is what reads as "lifted" instead of "outlined". */
+	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+	--shadow-md: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.05);
+	--shadow-lg: 0 2px 8px rgba(0, 0, 0, 0.08), 0 16px 40px rgba(0, 0, 0, 0.16);
 
-	/* --- Radius ------------------------------------------------------------ */
-	--radius-sm:   4px;
-	--radius-md:   6px;
-	--radius-lg:   8px;
+	/* --- Radius --------------------------------------------------------------- */
+	/* Tight on purpose. Dense business screens read as toys once corners round. */
+	--radius-sm:   5px;
+	--radius-md:   8px;
+	--radius-lg:   12px;
 	--radius-pill: 999px;
 
-	/* --- Spacing (4px base) --------------------------------------------------- */
+	/* --- Spacing (4px base) ---------------------------------------------------- */
 	--space-1: 0.25rem;
 	--space-2: 0.5rem;
 	--space-3: 0.75rem;
@@ -81,17 +116,30 @@
 	--space-8: 3rem;
 
 	/* --- Typography ------------------------------------------------------------ */
-	--font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	--font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
 	--font-mono: "SFMono-Regular", ui-monospace, "Cascadia Code", Consolas, monospace;
-	--text-xs: 0.75rem;
-	--text-sm: 0.875rem;
-	--text-md: 1rem;
-	--text-lg: 1.125rem;
-	--text-xl: 1.375rem;
-	--leading-tight:  1.3;
+
+	/* Base is 14px, not 16px — the density business software is read at. */
+	--text-xs:  0.6875rem;
+	--text-sm:  0.8125rem;
+	--text-md:  0.875rem;
+	--text-lg:  1rem;
+	--text-xl:  1.25rem;
+	--text-2xl: 1.5rem;
+
+	--weight-normal:   400;
+	--weight-medium:   500;
+	--weight-semibold: 600;
+	--weight-bold:     700;
+
+	--leading-tight:  1.25;
 	--leading-normal: 1.55;
 
-	/* --- Motion --------------------------------------------------------------- */
+	/* Headings tighten as they grow; small caps-y labels open up. */
+	--tracking-tight: -0.011em;
+	--tracking-wide:  0.06em;
+
+	/* --- Motion ----------------------------------------------------------------- */
 	--transition-fast: 120ms ease;
 	--transition:      200ms ease;
 }
@@ -122,16 +170,111 @@ body {
 	text-rendering: optimizeLegibility;
 }
 
+/* --- Headings: bold and tight, so hierarchy reads without per-screen rules --- */
+h1, h2, h3, h4, h5, h6 {
+	color: var(--color-text);
+	font-weight: var(--weight-semibold);
+	line-height: var(--leading-tight);
+	letter-spacing: var(--tracking-tight);
+}
+
+h1 { font-size: var(--text-2xl); font-weight: var(--weight-bold); }
+h2 { font-size: var(--text-xl); }
+h3 { font-size: var(--text-lg); }
+h4, h5, h6 { font-size: var(--text-md); }
+
+/* Underlined at rest, not on hover. With no brand hue a link is the same
+ * graphite as the prose around it, so the underline is the only thing marking
+ * it as a link — WCAG 1.4.1, and just as importantly, findable. */
 a {
 	color: var(--color-link);
-	text-decoration: none;
+	text-decoration: underline;
+	text-underline-offset: 2px;
+	text-decoration-thickness: 1px;
+	font-weight: var(--weight-medium);
 }
 
 a:hover {
-	text-decoration: underline;
+	text-decoration-thickness: 2px;
 }
 
+/* --- Buttons -----------------------------------------------------------------
+ * A baseline so a bare <button> — a modal's Cancel/Confirm, say — is already a
+ * house button rather than an OS one. Module rules like .form-submit-button are
+ * class selectors, so they outrank this wherever the two disagree. */
+button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-2);
+	padding: 0.5rem 1rem;
+	font: inherit;
+	font-size: var(--text-md);
+	font-weight: var(--weight-semibold);
+	color: var(--color-text);
+	background: var(--color-surface);
+	border: 1px solid var(--color-border-strong);
+	border-radius: var(--radius-md);
+	cursor: pointer;
+	transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+button:hover {
+	background: var(--color-surface-alt);
+	border-color: var(--color-text-subtle);
+}
+
+button:disabled {
+	color: var(--color-text-subtle);
+	background: var(--color-surface-sunken);
+	border-color: var(--color-border);
+	cursor: not-allowed;
+}
+
+/* Variants. The default button above is the quiet one; these two are the only
+ * filled buttons in the system, so on any given screen the affirmative action
+ * and the destructive one each stand alone and can't be mistaken for the
+ * other — or for the row of neutral buttons around them. */
+button.button-primary {
+	color: var(--color-on-primary);
+	background: var(--color-primary);
+	border-color: var(--color-primary);
+	box-shadow: var(--shadow-sm);
+}
+
+button.button-primary:hover {
+	background: var(--color-primary-hover);
+	border-color: var(--color-primary-hover);
+}
+
+button.button-primary:active {
+	background: var(--color-primary-active);
+	border-color: var(--color-primary-active);
+}
+
+button.button-danger {
+	color: var(--color-on-primary);
+	background: var(--color-danger);
+	border-color: var(--color-danger);
+	box-shadow: var(--shadow-sm);
+}
+
+button.button-danger:hover,
+button.button-danger:active {
+	background: var(--color-danger-hover);
+	border-color: var(--color-danger-hover);
+}
+
+button.button-primary:disabled {
+	background: var(--color-primary-muted);
+	border-color: var(--color-primary-muted);
+	color: var(--color-on-primary);
+	box-shadow: none;
+}
+
+/* A solid 2px graphite ring, not a translucent halo. On a monochrome page a
+ * soft glow disappears; a hard dark edge does not. */
 :focus-visible {
-	outline: 2px solid var(--color-focus-ring);
+	outline: 2px solid var(--color-primary);
 	outline-offset: 2px;
 }

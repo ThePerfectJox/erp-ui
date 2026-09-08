@@ -8,12 +8,16 @@
 	/* Sits above the layout chrome (header z-index: 20, sidebar: 10). */
 	--erp-modal-z: 1000;
 
-	--erp-modal-scrim:    rgba(15, 23, 42, 0.55);
+	/* Graphite scrim rather than pure black — matched to --color-text, so the
+	 * dimmed app reads as the same product and not as a greyed-out screenshot.
+	 * Lighter than it was on dark chrome: there is less to darken now. */
+	--erp-modal-scrim:    rgba(0, 0, 0, 0.5);
 	--erp-modal-surface:  var(--color-surface, #ffffff);
-	--erp-modal-fg:       var(--color-text, #1f2733);
+	--erp-modal-fg:       var(--color-text, #171717);
+	--erp-modal-border:   var(--color-border, #e5e5e5);
 
-	--erp-modal-radius:     var(--radius-lg, 8px);
-	--erp-modal-shadow:     var(--shadow-lg, 0 10px 30px rgba(15, 23, 42, 0.12));
+	--erp-modal-radius:     var(--radius-lg, 12px);
+	--erp-modal-shadow:     var(--shadow-lg, 0 2px 8px rgba(0, 0, 0, 0.08), 0 16px 40px rgba(0, 0, 0, 0.16));
 	--erp-modal-transition: var(--transition, 200ms ease);
 }
 
@@ -27,6 +31,9 @@
 	justify-content: center;
 	padding: 1.5rem;
 	background: var(--erp-modal-scrim);
+	/* Progressive enhancement — browsers without backdrop-filter just get the
+	 * flat scrim, which is already sufficient contrast on its own. */
+	backdrop-filter: blur(2px);
 	animation: erp-modal-backdrop-in var(--erp-modal-transition);
 }
 
@@ -42,6 +49,7 @@
 	overflow: hidden;
 	background: var(--erp-modal-surface);
 	color: var(--erp-modal-fg);
+	border: 1px solid var(--erp-modal-border);
 	border-radius: var(--erp-modal-radius);
 	box-shadow: var(--erp-modal-shadow);
 	animation: erp-modal-in var(--erp-modal-transition);
