@@ -1,16 +1,21 @@
-import './SidebarMenu.css'
+interface SidebarMenuProps {
+    icon: string
+    description: string
+    children?: React.ReactNode
+}
 
-function SidebarMenu() {
+function SidebarMenu({ icon, description, children }: SidebarMenuProps) {
     return <li className="sidebar-menu-item">
         <div>
             <span className="sidebar-menu-icon">
-                {/* Icon */}
+                <img src={icon} alt=""></img>
             </span>
             <span className="sidebar-menu-description">
-                {/* Description */}
+                {description}
             </span>
         </div>
         <ul className="sidebar-submenu">
+            {children}
         </ul>
     </li>
 }
