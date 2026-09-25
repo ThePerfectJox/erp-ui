@@ -1,23 +1,29 @@
+import { useState } from 'react'
+import warehouseIcon from '../assets/warehouse.svg'
 import Sidebar from './Sidebar/Sidebar'
 import SidebarMenu from './Sidebar/SidebarMenu'
 import SidebarSubMenu from './Sidebar/SidebarSubMenu'
+import './Layout.css'
 
 function Layout() {
-    return <div>
-        <Sidebar isOpen={true}>
-            <SidebarMenu icon="" description="Menu 1">
-                <SidebarSubMenu description="Sub Menu 1" link="/sub-menu-1" />
-                <SidebarSubMenu description="Sub Menu 2" link="/sub-menu-2" />
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    return <div className="layout">
+        <Sidebar isOpen={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+            <SidebarMenu icon={warehouseIcon} description="Menu 1">
+                <SidebarSubMenu description="Sub Menu 1" link="/menu-1/sub-menu-1" />
+                <SidebarSubMenu description="Sub Menu 2" link="/menu-1/sub-menu-2" />
             </SidebarMenu>
-            <SidebarMenu icon="" description="Menu 2">
-                <SidebarSubMenu description="Sub Menu 1" link="/sub-menu-1" />
-                <SidebarSubMenu description="Sub Menu 2" link="/sub-menu-2" />
+            <SidebarMenu icon={warehouseIcon} description="Menu 2">
+                <SidebarSubMenu description="Sub Menu 1" link="/menu-2/sub-menu-1" />
+                <SidebarSubMenu description="Sub Menu 2" link="/menu-2/sub-menu-2" />
             </SidebarMenu>
-            <SidebarMenu icon="" description="Menu 3">
-                <SidebarSubMenu description="Sub Menu 1" link="/sub-menu-1" />
-                <SidebarSubMenu description="Sub Menu 2" link="/sub-menu-2" />
+            <SidebarMenu icon={warehouseIcon} description="Menu 3">
+                <SidebarSubMenu description="Sub Menu 1" link="/menu-3/sub-menu-1" />
+                <SidebarSubMenu description="Sub Menu 2" link="/menu-3/sub-menu-2" />
             </SidebarMenu>
         </Sidebar>
+        <main className="layout-content" />
     </div>
 }
 

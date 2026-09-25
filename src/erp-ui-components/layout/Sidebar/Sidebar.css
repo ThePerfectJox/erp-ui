@@ -1,0 +1,368 @@
+/* Sidebar — a navigation rail in the style of an SAP-type ERP shell.
+ *
+ * Markup, one block per menu:
+ *
+ *   li.sidebar-group                 the group: a header and the submenu it owns
+ *     button.sidebar-group-header    icon · label · chevron — the dropdown trigger
+ *     ul.sidebar-submenu             hidden until the group is expanded
+ *       li.sidebar-submenu-item > a
+ *
+ * Two pieces of state, both written on as classes by the components. Nothing
+ * in here has to work them out for itself:
+ *
+ *   .sidebar-open / .sidebar-closed  on <aside>   is the rail expanded?
+ *   .sidebar-group-expanded          on the <li>  is this dropdown open?
+ *
+ * Widths while closed. These have to add up to the rail exactly, or the icons
+ * get cut off by overflow-x:
+ *
+ *   rail                            48px
+ *   - header row padding-left       12px
+ *   - icon column                   24px
+ *   - header row padding-right      12px
+ *                                 ------
+ *                                   48px
+ *
+ * Why it looks the way it does: rows run the full width of the rail with
+ * square corners and a fixed 44px height. Full-bleed rows with a hard left
+ * marker is how ERP navigation reads; rounded, inset pills read as a consumer
+ * web app.
+ *
+ * ---------------------------------------------------------------------------
+ * ONE background colour in this file
+ * ---------------------------------------------------------------------------
+ * Only .sidebar sets a background. Menu rows, groups and submenu rows are
+ * transparent and darken what is behind them with the --sidebar-shade-*
+ * variables below, so recolouring the rail recolours every state with it and
+ * nothing here needs touching.
+ *
+ * The shades stack where they overlap — a selected row inside an open group
+ * darkens the group tint, which has already darkened the rail — so each state
+ * stays clearly a step down from the one before it.
+ */
+
+/* ---------------------------------------------------------------------------
+ * The rail
+ * -------------------------------------------------------------------------*/
+
+.sidebar {
+	/* --- The only colour declared here ---
+	 * Change this line and the whole rail follows. */
+	background-color: var(--color-chrome-bg);
+
+	/* --- Everything else is a shade of it ---
+	 * Black at a low alpha, so it reads as "the rail, a bit darker" whatever
+	 * the rail happens to be. For a dark theme these four become rgba(255,
+	 * 255, 255, …) — the alphas can stay as they are. */
+	--sidebar-shade-group:          rgba(0, 0, 0, 0.03);   /* open group block  */
+	--sidebar-shade-hover:          rgba(0, 0, 0, 0.06);   /* row under cursor  */
+	--sidebar-shade-selected:       rgba(0, 0, 0, 0.11);   /* current route     */
+	--sidebar-shade-selected-hover: rgba(0, 0, 0, 0.16);   /* both at once      */
+
+	/* Hairlines inside the rail, same idea. */
+	--sidebar-line:                 rgba(0, 0, 0, 0.10);
+
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
+
+	/* The one exception: this edge divides the rail from the page behind it,
+	 * so it belongs to the app's border token, not to the rail's own shades. */
+	border-right: 1px solid var(--color-chrome-border);
+
+	/* Hides labels as they slide out of the rail while it shrinks. */
+	overflow-x: hidden;
+
+	/* Only the width animates. */
+	transition-property: width;
+	transition-duration: 200ms;
+	transition-timing-function: ease;
+}
+
+.sidebar-open {
+	width: 240px;
+}
+
+.sidebar-closed {
+	width: 48px;
+
+	/* The whole rail opens it, so say so. */
+	cursor: pointer;
+}
+
+/* ---------------------------------------------------------------------------
+ * Header — holds the close button
+ * -------------------------------------------------------------------------*/
+
+.sidebar-header {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	height: 44px;
+	padding-left: var(--space-1);
+	padding-right: var(--space-1);
+	border-bottom: 1px solid var(--sidebar-line);
+
+	/* Keeps its full height when the menu list below is tall. */
+	flex-shrink: 0;
+}
+
+/* Closed: no spare width to push the button right, so centre it. */
+.sidebar-closed .sidebar-header {
+	justify-content: center;
+	padding-left: 0;
+	padding-right: 0;
+}
+
+/* index.css gives every <button> a border, a fill and a radius. These rules
+ * use a class so they outrank it, and strip it back to a bare icon button.
+ * transparent, not a colour: the rail shows through. */
+.sidebar-toggle {
+	width: 36px;
+	height: 36px;
+	padding-top: 0;
+	padding-right: 0;
+	padding-bottom: 0;
+	padding-left: 0;
+	background-color: transparent;
+	border-style: none;
+	border-radius: 0;
+	flex-shrink: 0;
+}
+
+/* Needed as its own rule: index.css styles button:hover, which would otherwise
+ * outrank the single class above. */
+.sidebar-toggle:hover {
+	background-color: var(--sidebar-shade-hover);
+}
+
+.sidebar-toggle img {
+	display: block;
+	width: 20px;
+	height: 20px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Menu list
+ * -------------------------------------------------------------------------*/
+
+.sidebar-menu {
+	margin-top: 0;
+	margin-bottom: 0;
+
+	/* No side padding: that is what lets rows reach both edges of the rail. */
+	padding-top: var(--space-2);
+	padding-right: 0;
+	padding-bottom: var(--space-2);
+	padding-left: 0;
+	list-style-type: none;
+
+	/* Takes the height left under the header, and scrolls past that. */
+	flex-grow: 1;
+	overflow-y: auto;
+}
+
+/* ---------------------------------------------------------------------------
+ * Group — one menu and its submenu, kept together as a block
+ * -------------------------------------------------------------------------*/
+
+.sidebar-group {
+	/* Air between neighbouring menus. Adjacent margins collapse, so two
+	 * closed groups sit 4px apart rather than 8px. */
+	margin-top: var(--space-1);
+	margin-bottom: var(--space-1);
+}
+
+/* Open, the group becomes a visible container so its submenu reads as
+ * belonging to the header above it rather than floating in the list: the rail
+ * a shade darker, a hairline top and bottom, and more room from its
+ * neighbours. */
+.sidebar-group-expanded {
+	margin-top: var(--space-3);
+	margin-bottom: var(--space-3);
+	background-color: var(--sidebar-shade-group);
+	border-top: 1px solid var(--sidebar-line);
+	border-bottom: 1px solid var(--sidebar-line);
+}
+
+/* --- Group header (the dropdown trigger) --- */
+
+/* Again overriding the index.css <button> baseline: full width, square, flat,
+ * text to the left. */
+.sidebar-group-header {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	column-gap: var(--space-2);
+	width: 100%;
+	min-height: 44px;
+	padding-top: 0;
+	padding-right: var(--space-3);
+	padding-bottom: 0;
+	padding-left: var(--space-3);
+	background-color: transparent;
+	border-style: none;
+	border-radius: 0;
+	color: var(--color-chrome-fg);
+	font-size: var(--text-md);
+	font-weight: var(--weight-medium);
+	text-align: left;
+}
+
+.sidebar-group-header:hover {
+	background-color: var(--sidebar-shade-hover);
+}
+
+/* The focus ring in index.css sits 2px outside the element. On a row that
+ * already touches both edges of the rail that half disappears, so draw it
+ * just inside instead. */
+.sidebar-group-header:focus-visible {
+	outline-offset: -2px;
+}
+
+/* An open group is the heading of the block below it, so it carries weight. */
+.sidebar-group-expanded .sidebar-group-header {
+	color: var(--color-text);
+	font-weight: var(--weight-semibold);
+}
+
+/* Fixed-width icon column, so every label starts at the same x position. */
+.sidebar-group-icon {
+	display: flex;
+	justify-content: center;
+	width: 24px;
+	flex-shrink: 0;
+}
+
+.sidebar-group-icon img {
+	width: 20px;
+	height: 20px;
+}
+
+/* Never wrap: a wrapped label would make the rail jump mid-animation. */
+.sidebar-group-label {
+	white-space: nowrap;
+}
+
+/* --- Chevron ---
+ * A square with two of its four borders drawn, turned 45°. Cheaper than
+ * shipping an icon for something this small, and it can be rotated.
+ * currentColor, so it tracks the row's text rather than naming a colour. */
+.sidebar-group-chevron {
+	width: 6px;
+	height: 6px;
+	border-right-width: 1px;
+	border-right-style: solid;
+	border-right-color: currentColor;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+	border-bottom-color: currentColor;
+
+	/* Pushes it to the far right of the row. */
+	margin-left: auto;
+
+	/* Points down: closed. */
+	transform: rotate(45deg);
+	flex-shrink: 0;
+
+	transition-property: transform;
+	transition-duration: 120ms;
+	transition-timing-function: ease;
+}
+
+/* Points up: open. */
+.sidebar-group-expanded .sidebar-group-chevron {
+	transform: rotate(-135deg);
+}
+
+/* ---------------------------------------------------------------------------
+ * Closed rail — icons only
+ * -------------------------------------------------------------------------*/
+
+.sidebar-closed .sidebar-group-label {
+	display: none;
+}
+
+.sidebar-closed .sidebar-group-chevron {
+	display: none;
+}
+
+/* With the label and chevron gone, centre the icon in the 48px rail. */
+.sidebar-closed .sidebar-group-header {
+	justify-content: center;
+}
+
+/* ---------------------------------------------------------------------------
+ * Submenu — the dropdown
+ * -------------------------------------------------------------------------*/
+
+.sidebar-submenu {
+	/* Closed is the default state; the class below is what reveals it. */
+	display: none;
+
+	margin-top: 0;
+	margin-bottom: 0;
+	padding-top: 0;
+	padding-right: 0;
+	padding-bottom: var(--space-1);
+	padding-left: 0;
+	list-style-type: none;
+}
+
+.sidebar-group-expanded .sidebar-submenu {
+	display: block;
+}
+
+.sidebar-submenu-item a {
+	display: block;
+	padding-top: var(--space-2);
+	padding-right: var(--space-3);
+	padding-bottom: var(--space-2);
+
+	/* 41px here plus the 3px border below is 44px, which is where the parent
+	 * label starts: 12px row padding + 24px icon column + 8px gap. */
+	padding-left: 41px;
+
+	color: var(--color-chrome-fg);
+	font-size: var(--text-sm);
+	font-weight: var(--weight-normal);
+	border-radius: 0;
+
+	/* index.css underlines links. Nav rows are found by position, not by an
+	 * underline, and 20 underlined rows in a column is noise. */
+	text-decoration: none;
+	white-space: nowrap;
+
+	/* The selection marker, drawn on every row but left transparent until the
+	 * row is the selected one — so nothing shifts sideways when it moves. */
+	border-left-width: 3px;
+	border-left-style: solid;
+	border-left-color: transparent;
+}
+
+.sidebar-submenu-item a:hover {
+	background-color: var(--sidebar-shade-hover);
+	text-decoration: none;
+}
+
+.sidebar-submenu-item a:focus-visible {
+	outline-offset: -2px;
+}
+
+/* NavLink adds .active to the row matching the current route. Marked three
+ * ways at once — a deeper shade, the bar and heavier text — so it is
+ * unmistakable next to a merely hovered row, and still obvious to anyone who
+ * cannot separate the two greys.
+ *
+ * The bar takes currentColor, set on the line above, so it is always the same
+ * as this row's text and never needs its own theme value. */
+.sidebar-submenu-item a.active {
+	background-color: var(--sidebar-shade-selected);
+	color: var(--color-text);
+	border-left-color: currentColor;
+	font-weight: var(--weight-semibold);
+}
+
+.sidebar-submenu-item a.active:hover {
+	background-color: var(--sidebar-shade-selected-hover);
+}

@@ -1,0 +1,25 @@
+/* Page shell — the sidebar rail sits beside the content column.
+ *
+ * The sidebar sets its own width, and .layout-content takes whatever is left.
+ * So opening and closing the sidebar pushes the content across instead of
+ * sliding over the top of it. */
+
+.layout {
+	display: flex;
+	min-height: 100vh;
+}
+
+.layout-content {
+	/* Take all the width the sidebar isn't using. */
+	flex-grow: 1;
+
+	/* Lets this column shrink below the width of its content. Without it a
+	 * wide table or a long unbroken word would stretch the column and push
+	 * the sidebar off screen. */
+	min-width: 0;
+
+	padding-top: var(--space-5);
+	padding-right: var(--space-5);
+	padding-bottom: var(--space-5);
+	padding-left: var(--space-5);
+}

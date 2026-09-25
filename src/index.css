@@ -1,40 +1,9 @@
-/* erp-ui · Global theme template — single source of truth for design tokens.
- * Component sheets read these --* variables instead of hard-coding values.
- *
- * Direction: monochrome graphite on light chrome. There is no brand hue at
- * all — graphite carries every interactive role (filled buttons, rails,
- * selection, focus), and the only colour that reaches the screen is semantic
- * status. A red button therefore means something, because it is the sole red
- * thing in the room. Light mode only (office software, not a consumer app).
- *
- * Three rules hold the palette together:
- *  1. Every colour used for text clears WCAG AA (4.5:1) on its own background.
- *  2. Nothing is distinguished by hue alone — with no brand colour there is no
- *     hue to distinguish it by. Links carry an underline, the selected table
- *     row carries a rail, sorted columns carry a rule. See the note on
- *     --color-primary-soft for the one place this gets tight.
- *  3. The status hues that remain sit far apart on the wheel (blue 224° ·
- *     violet 262° · green 142° · amber 30° · red 0°), so a row's state is
- *     legible from its colour alone, not only from its label.
- */
-
 :root {
 	color-scheme: light;
-
-	/* --- Brand -------------------------------------------------------------
-	 * Neutral grey, not a hue — R, G and B are equal at every step. That matters
-	 * more than it sounds: a "graphite" with even a few points more blue than
-	 * red (#1f242c, say) reads as navy on a real screen, especially at button
-	 * size. 17.4:1 on white, and white on it is the same, so it is safe as fill
-	 * and as text without the two-tone workaround a saturated brand colour
-	 * needs. Hover goes *lighter* — on a near-black fill that reads as a
-	 * response where going darker barely registers. */
 	--color-primary:            #1a1a1a;
 	--color-primary-hover:      #333333;
 	--color-primary-active:     #000000;
-	/* Selection tint. With no hue available this has to separate from the row
-	 * hover (--color-surface-sunken) on tone alone, which is a narrow gap — so
-	 * the selected row also gets a rail and a weight bump in data-table. */
+
 	--color-primary-soft:       #e3e3e3;
 	--color-primary-soft-hover: #d6d6d6;
 	--color-primary-muted:      #b0b0b0;   /* disabled brand                    */
@@ -116,7 +85,7 @@
 	--space-8: 3rem;
 
 	/* --- Typography ------------------------------------------------------------ */
-	--font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+	--font-sans: Arial, sans-serif;
 	--font-mono: "SFMono-Regular", ui-monospace, "Cascadia Code", Consolas, monospace;
 
 	/* Base is 14px, not 16px — the density business software is read at. */
