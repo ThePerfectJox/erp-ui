@@ -20,6 +20,8 @@ import {
 	TextArea,
 	TextInput,
 } from './erp-ui-components/form'
+import { DataGrid } from './erp-ui-components/sheet'
+import type { GridColumn, GridRow, RowChangeKind } from './erp-ui-components/sheet'
 import './PurchaseOrderScreen.css'
 
 /* Inline icons, for the buttons whose logo has to follow the button's own text
@@ -96,6 +98,56 @@ const COST_CENTRES = [
 	{ value: '9000', label: '9000 — Administration' },
 ]
 
+const ITEM_COLUMNS: GridColumn[] = [
+	/* Item number is the document's own sequence, so sorting by it is how you get
+	 * back to document order after sorting by something else. */
+	{ key: 'item', header: 'Item', width: 70, type: 'number', isReadOnly: true },
+	{ key: 'material', header: 'Material', width: 110 },
+	/* No width, so this takes whatever the sized columns leave — the grid fills
+	 * the card instead of stopping short of it, and the longest text gets the
+	 * room. */
+	{ key: 'description', header: 'Description' },
+	{ key: 'quantity', header: 'Quantity', width: 100, type: 'number' },
+	{ key: 'unit', header: 'Unit', width: 70 },
+	{
+		key: 'price',
+		header: 'Net price',
+		width: 110,
+		type: 'number',
+		/* Two decimals in the grid and on the clipboard, and parsed back off it.
+		 * A format with no matching parse is how a column becomes unpasteable. */
+		format: value => (typeof value === 'number' ? value.toFixed(2) : ''),
+	},
+	{
+		key: 'total',
+		header: 'Net value',
+		width: 120,
+		type: 'number',
+		/* Derived, so it is read-only — and computed here rather than stored, so it
+		 * cannot drift out of step with the quantity and price. */
+		isReadOnly: true,
+		format: (_unused, row) => {
+			const quantity = typeof row.quantity === 'number' ? row.quantity : 0
+			const price = typeof row.price === 'number' ? row.price : 0
+
+			return (quantity * price).toFixed(2)
+		},
+		/* Nothing is stored under `total`, so without this the sort would read
+		 * undefined from every row and do nothing. The real number, not the
+		 * formatted string — otherwise "100" would sort before "20". */
+		sortValue: row => Number(row.quantity ?? 0) * Number(row.price ?? 0),
+	},
+]
+
+const INITIAL_ITEMS: GridRow[] = [
+	{ item: 10, material: 'R-1104', description: 'Steel sheet 2mm', quantity: 120, unit: 'EA', price: 18.4 },
+	{ item: 20, material: 'H-4010', description: 'Hex bolt M8×40', quantity: 2400, unit: 'EA', price: 0.14 },
+	{ item: 30, material: 'H-4012', description: 'Washer M8', quantity: 2400, unit: 'EA', price: 0.03 },
+	{ item: 40, material: 'P-8800', description: 'Powder coat, signal white', quantity: 24, unit: 'L', price: 31.5 },
+	{ item: 50, material: 'C-0451', description: 'Pallet, Euro', quantity: 18, unit: 'EA', price: 12.75 },
+	{ item: 60, material: 'R-2201', description: 'Aluminium coil 0.8mm', quantity: 400, unit: 'KG', price: 4.62 },
+]
+
 const PRIORITIES = [
 	{ value: 'standard', label: 'Standard', description: 'Ships within 5 working days.' },
 	{ value: 'express', label: 'Express', description: 'Next working day. Surcharge applies.' },
@@ -131,13 +183,35 @@ function PurchaseOrderScreen() {
 	const [note, setNote] = useState('')
 	const [isCompleted, setIsCompleted] = useState(false)
 	const [isAutoPosting, setIsAutoPosting] = useState(true)
+	const [items, setItems] = useState(INITIAL_ITEMS)
+
+	/* Controlled, so the save flow can clear the marks — and only once the server
+	 * has actually accepted them. */
+	const [dirtyItems, setDirtyItems] = useState<Map<string, RowChangeKind>>(new Map())
+
 	const [isSaving, setIsSaving] = useState(false)
 
 	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault()
 		setIsSaving(true)
-		window.setTimeout(() => setIsSaving(false), 1200)
+
+		/* What a real save would send. The grid has already split the work into
+		 * inserts and updates, so this is the whole of the decision:
+		 *
+		 *   const added   = [...dirtyItems].filter(([, kind]) => kind === 'added')
+		 *   const edited  = [...dirtyItems].filter(([, kind]) => kind === 'edited')
+		 *   await Promise.all([postItems(added), patchItems(edited)])
+		 */
+		window.setTimeout(() => {
+			setIsSaving(false)
+
+			/* Cleared only after the request resolved. Clearing on edit would show
+			 * "saved" for rows still sitting in a failed request. */
+			setDirtyItems(new Map())
+		}, 1200)
 	}
+
+	const changedCount = dirtyItems.size
 
 	return (
 		<div className="po-screen">
@@ -274,6 +348,34 @@ function PurchaseOrderScreen() {
 							<NumberInput label="Tax rate (%)" unit="%" defaultValue="19" isDisabled />
 							<NumberInput label="Document year" value="2026" isTextAligned isReadOnly />
 						</FormRow>
+					</FormSection>
+
+					<FormSection
+						title="Items"
+						description="Click a heading to sort. Drag a column or row edge to resize, double-click it to reset. Copy a range straight into Excel, or paste a block back in."
+					>
+						{changedCount > 0 && (
+							<MessageStrip valueState="warning" isLive>
+								{changedCount === 1 ? '1 item has' : `${changedCount} items have`} unsaved changes.
+								Marked in the row numbers.
+							</MessageStrip>
+						)}
+
+						<DataGrid
+							caption="Purchase order items"
+							isCaptionHidden
+							columns={ITEM_COLUMNS}
+							rows={items}
+							onChange={setItems}
+							/* The document's own item number, so a mark stays with
+							 * its row through sorting rather than following a
+							 * position. */
+							getRowId={row => String(row.item)}
+							dirtyRows={dirtyItems}
+							onDirtyRowsChange={setDirtyItems}
+							canGrowOnPaste
+							maxBodyHeight="15rem"
+						/>
 					</FormSection>
 
 					<FormSection title="Shipping and output">

@@ -1,0 +1,480 @@
+/* =============================================================================
+ * DataGrid — spreadsheet grid, Fiori surface
+ * =============================================================================
+ *
+ * Markup:
+ *
+ *   div.grid
+ *     p.grid-caption
+ *     div.grid-scroll                  the scrollport; header sticks to it
+ *       table.grid-table[role=grid]
+ *         thead.grid-head
+ *           th.grid-corner             above the row numbers
+ *           th.grid-header
+ *         tbody
+ *           th.grid-row-number         Excel's row gutter
+ *           td.grid-cell[role=gridcell]
+ *             input.grid-editor        only in the cell being edited
+ *
+ * The look borrows from a spreadsheet where that carries meaning and from Fiori
+ * everywhere else. Specifically:
+ *
+ * - Every cell has a visible 1px grid line. Business tables usually drop
+ *   vertical rules, but here the cell is the unit you select, copy and paste, so
+ *   its boundaries have to be visible or a range selection has no clear edges.
+ * - The row-number gutter is what makes it read as a spreadsheet immediately,
+ *   and it doubles as the row handle and the "which rows am I in" indicator.
+ * - Selection is a light brand-blue wash; the focused cell keeps a solid 2px
+ *   brand border. Two marks, because "the range" and "the cell that moves when
+ *   I press an arrow" are different things and confusing them makes editing feel
+ *   unpredictable.
+ * ---------------------------------------------------------------------------*/
+
+.grid {
+	display: flex;
+	flex-direction: column;
+	row-gap: var(--space-2);
+	min-width: 0;
+}
+
+.grid-caption {
+	margin: 0;
+	color: var(--color-text-muted);
+	font-size: var(--text-sm);
+	font-weight: var(--weight-semibold);
+}
+
+.grid-caption-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* The scrollport. Both axes, so a wide grid scrolls sideways instead of
+ * stretching the page, and the sticky header below anchors to this box. */
+.grid-scroll {
+	position: relative;
+	overflow: auto;
+	background-color: var(--color-surface);
+	border: 1px solid var(--color-border-strong);
+	border-radius: var(--radius-sm);
+}
+
+.grid-table {
+	/* `collapse` would let neighbouring cells share a border, and a shared
+	 * border cannot be recoloured by one side — so a selected cell could not draw
+	 * its own edge. `separate` with zero spacing gives the same 1px look and
+	 * keeps every border under its own cell's control. */
+	border-collapse: separate;
+	border-spacing: 0;
+
+	/* Fixed layout, and it is doing two jobs.
+	 *
+	 * Column widths come from the <colgroup> and stay put, so columns do not jump
+	 * about as the user types, and the table is far cheaper to lay out than an
+	 * auto one.
+	 *
+	 * It is also what makes a column with no declared width fill the parent: the
+	 * fixed algorithm hands every leftover pixel to the columns whose width is
+	 * auto. No measuring, no ResizeObserver.
+	 *
+	 * The width itself is set inline by the component, which has to choose between
+	 * 100% and an explicit total depending on whether anything is flexing — see
+	 * the note on `tableStyle`. */
+	table-layout: fixed;
+
+	font-size: var(--text-sm);
+	font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------------------
+ * Header
+ * -------------------------------------------------------------------------*/
+
+.grid-head {
+	/* Above the cells, so rows scroll underneath rather than over. */
+	position: sticky;
+	top: 0;
+	z-index: 2;
+}
+
+.grid-header,
+.grid-corner {
+	position: sticky;
+	top: 0;
+
+	/* No padding: the header's whole area is the sort button, which carries the
+	 * padding itself so the entire cell is clickable rather than just the text.
+	 *
+	 * `position: sticky` above doubles as the containing block for the absolutely
+	 * positioned resize handle — a sticky element is a positioned one, so no
+	 * separate `position: relative` is needed. */
+	padding: 0;
+
+	/* Opaque: the rows scroll under this, and a translucent header would show
+	 * them through. */
+	background-color: var(--color-surface-sunken);
+	color: var(--color-text-muted);
+	font-size: var(--text-xs);
+	font-weight: var(--weight-bold);
+	letter-spacing: var(--tracking-wide);
+	text-transform: uppercase;
+	white-space: nowrap;
+
+	/* Borders on the sticky header have to be drawn as box-shadow. A real border
+	 * scrolls away with the element's own box in some engines, leaving the
+	 * header edge-less over the scrolling content. */
+	box-shadow: inset -1px 0 0 0 var(--color-border), inset 0 -1px 0 0 var(--color-border-strong);
+}
+
+/* ---------------------------------------------------------------------------
+ * Sorting
+ * -------------------------------------------------------------------------*/
+
+/* Overrides the <button> baseline in index.css down to a transparent, full-bleed
+ * hit area. The whole header cell sorts, not just the word in it — a 60px-wide
+ * column heading is a small target otherwise. */
+.grid-header-button {
+	display: flex;
+	align-items: center;
+	justify-content: inherit;
+	column-gap: var(--space-1);
+	width: 100%;
+	min-height: 0;
+	height: 100%;
+	padding: var(--space-2) var(--space-3);
+	background: none;
+	border: none;
+	border-radius: 0;
+	color: inherit;
+	font: inherit;
+	letter-spacing: inherit;
+	text-transform: inherit;
+	text-align: inherit;
+	cursor: pointer;
+}
+
+.grid-header-button:hover {
+	background-color: var(--color-chrome-hover);
+	color: var(--color-text);
+}
+
+.grid-header-button:focus-visible {
+	/* Inside, because the header's right edge is under the resize handle and an
+	 * outward ring would be clipped by the scrollport. */
+	outline: 2px solid var(--color-focus-ring);
+	outline-offset: -2px;
+}
+
+.grid-header-label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* The direction arrow: a triangle from borders, so it needs no icon asset and
+ * takes the header's own colour. Only rendered for the sorted column, and
+ * `margin-left: auto` pins it to the far edge so the headings stay aligned. */
+.grid-sort-arrow {
+	flex-shrink: 0;
+	margin-left: auto;
+}
+
+.grid-sort-arrow-asc,
+.grid-sort-arrow-desc {
+	width: 0;
+	height: 0;
+	border-left: 4px solid transparent;
+	border-right: 4px solid transparent;
+}
+
+/* Points up for ascending — smallest at the top, which is where the arrow is
+ * aiming. */
+.grid-sort-arrow-asc {
+	border-bottom: 5px solid var(--color-primary);
+}
+
+.grid-sort-arrow-desc {
+	border-top: 5px solid var(--color-primary);
+}
+
+/* The sorted column is tinted, so it is findable without reading the arrow —
+ * useful on a wide grid where the sorted column has scrolled out of view. */
+.grid-header[aria-sort] {
+	background-color: var(--color-primary-soft);
+	color: var(--color-primary-active);
+}
+
+/* ---------------------------------------------------------------------------
+ * Resize handles
+ * -------------------------------------------------------------------------*/
+
+/* Both handles are invisible until hovered. A grid with a visible grab bar on
+ * every column and every row reads as scaffolding; the cursor change on approach
+ * is enough of an affordance.
+ *
+ * 5px wide and overhanging the edge by 2px, so the handle straddles the grid line
+ * and is hittable from either side. Under 4px and it becomes a game. */
+.grid-resize-column {
+	position: absolute;
+	top: 0;
+	right: -2px;
+	z-index: 1;
+	width: 5px;
+	height: 100%;
+	cursor: col-resize;
+
+	/* No layout effect, so showing it cannot nudge the header text. */
+	background-color: transparent;
+
+	/* The pointer must never be captured mid-drag by something underneath. */
+	touch-action: none;
+}
+
+.grid-resize-row {
+	position: absolute;
+	left: 0;
+	bottom: -2px;
+	z-index: 1;
+	width: 100%;
+	height: 5px;
+	cursor: row-resize;
+	background-color: transparent;
+	touch-action: none;
+}
+
+.grid-resize-column:hover,
+.grid-resize-row:hover {
+	background-color: var(--color-primary);
+}
+
+.grid-corner {
+	left: 0;
+
+	/* Above the column headers, since it is sticky on both axes and has to stay
+	 * on top where they cross. */
+	z-index: 3;
+	width: 3rem;
+}
+
+/* ---------------------------------------------------------------------------
+ * Row numbers
+ * -------------------------------------------------------------------------*/
+
+.grid-row-number {
+	/* Sticky on the horizontal axis, so the gutter stays put while a wide grid
+	 * scrolls sideways — and, as with the header, it doubles as the containing
+	 * block for the row's resize handle. */
+	position: sticky;
+	left: 0;
+	z-index: 1;
+	padding: 0 var(--space-1);
+	background-color: var(--color-surface-sunken);
+	color: var(--color-text-subtle);
+	font-size: var(--text-xs);
+	font-weight: var(--weight-normal);
+
+	/* Not selectable: dragging down the gutter would otherwise pick up the
+	 * numbers as text and put them on the clipboard. */
+	user-select: none;
+
+	box-shadow: inset -1px 0 0 0 var(--color-border-strong), inset 0 -1px 0 0 var(--color-border);
+
+	/* A 3px leading bar, transparent until the row is dirty. Drawn on every row
+	 * so that marking one cannot shift the numbers sideways by 3px. */
+	border-left: 3px solid transparent;
+}
+
+.grid-row-number > .grid-row-index {
+	display: block;
+	text-align: center;
+}
+
+/* Marks which rows the selection covers — the spreadsheet cue that tells you
+ * where you are without having to look at the cells themselves. */
+.grid-row-number-active {
+	background-color: var(--color-primary-soft);
+	color: var(--color-primary-active);
+	font-weight: var(--weight-bold);
+}
+
+/* ---------------------------------------------------------------------------
+ * Change marks
+ * -------------------------------------------------------------------------*/
+
+/* A dirty row is marked three ways at once: a coloured leading bar, a coloured
+ * gutter and a glyph. The glyph is the one that matters — a bar and a tint are
+ * both colour, and this has to survive greyscale, a projector and colour
+ * blindness, because "did my edit register" is not a question to answer by
+ * squinting.
+ *
+ * Amber for changed, green for new. Not red: nothing is wrong, there is just
+ * something to save. */
+.grid-row-number-edited {
+	border-left-color: var(--color-warning-border);
+	color: var(--color-warning);
+}
+
+.grid-row-number-added {
+	border-left-color: var(--color-success-border);
+	color: var(--color-success);
+}
+
+.grid-row-marker {
+	position: absolute;
+	top: 0;
+	right: 2px;
+	font-size: var(--text-sm);
+	font-weight: var(--weight-bold);
+	line-height: 1;
+
+	/* The glyph is an affordance for the eye; `title` carries the meaning, and
+	 * the cursor says there is something to read. */
+	cursor: help;
+}
+
+/* ---------------------------------------------------------------------------
+ * Cells
+ * -------------------------------------------------------------------------*/
+
+.grid-cell {
+	padding: var(--space-1) var(--space-3);
+
+	/* No height here — the row sets it, so a dragged row height applies to every
+	 * cell in it without each one having to be told. */
+	color: var(--color-text);
+
+	/* Right and bottom only. Each cell draws two of its four edges and the
+	 * neighbours supply the rest, which is what produces single-width lines
+	 * without doubling up. The table's own border closes the top and left. */
+	border-right: 1px solid var(--color-border);
+	border-bottom: 1px solid var(--color-border);
+
+	/* Overflowing text is clipped rather than wrapped: a row that grows to fit
+	 * its content breaks the uniform row height a grid depends on. The full
+	 * value is always reachable by selecting the cell and copying. */
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+
+	/* The cell is the click target and the drag target, so a text caret would be
+	 * misleading and a text selection would fight the range. */
+	cursor: cell;
+	user-select: none;
+}
+
+/* Read-only columns read as inert: the sunken fill is the same one editable
+ * fields use elsewhere in reverse — here white means "you can type". */
+.grid-cell-readonly {
+	background-color: var(--color-surface-alt);
+	color: var(--color-text-muted);
+	cursor: default;
+}
+
+/* The range. A wash rather than a border, so a 5 × 3 selection reads as one
+ * block instead of fifteen outlined cells. */
+.grid-cell-selected {
+	background-color: var(--color-primary-soft);
+}
+
+/* The active cell — where typing goes and what the arrows move from. A solid 2px
+ * brand border, drawn with an inset shadow rather than a border so it does not
+ * change the cell's size and shift the whole row by a pixel. */
+.grid-cell-focused {
+	background-color: var(--color-surface);
+	box-shadow: inset 0 0 0 2px var(--color-primary);
+}
+
+/* The browser's focus ring is suppressed *only* because the 2px brand border
+ * above replaces it, and only for a cell that is genuinely the focused one. */
+.grid-cell:focus-visible {
+	outline: none;
+}
+
+.grid-cell-focused.grid-cell-readonly {
+	background-color: var(--color-surface-alt);
+}
+
+/* ---------------------------------------------------------------------------
+ * Editor
+ * -------------------------------------------------------------------------*/
+
+/* Fills the cell exactly, so committing an edit does not make the text jump.
+ * Flat and transparent: the cell's own focus border is the visible frame. */
+.grid-editor {
+	display: block;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+
+	/* Cancels the cell's padding so the text sits where it did before the editor
+	 * opened, then re-applies it inside. */
+	padding: 0;
+
+	color: var(--color-text);
+	font: inherit;
+	font-size: var(--text-sm);
+	text-align: inherit;
+	background-color: transparent;
+	border: none;
+	outline: none;
+}
+
+.grid-empty {
+	margin: 0;
+	padding: var(--space-5);
+	color: var(--color-text-muted);
+	font-size: var(--text-sm);
+	text-align: center;
+}
+
+/* ---------------------------------------------------------------------------
+ * Forced colours (Windows high contrast)
+ * -------------------------------------------------------------------------*/
+
+/* The selection wash and the focus shadow are both colours the OS replaces, so
+ * the range and the active cell would become indistinguishable. Both fall back
+ * to the system's own selection pair, and the active cell keeps a real border so
+ * it still differs from the rest of the range. */
+@media (forced-colors: active) {
+	.grid-cell-selected {
+		background-color: Highlight;
+		color: HighlightText;
+	}
+
+	.grid-cell-focused {
+		outline: 3px solid CanvasText;
+		outline-offset: -3px;
+	}
+
+	.grid-row-number-active {
+		background-color: Highlight;
+		color: HighlightText;
+	}
+
+	/* The change bars and the sort arrow are all colour, which the OS replaces.
+	 * The glyph in the gutter is real text and survives on its own, so the marks
+	 * stay readable; the arrow just needs a colour the system still honours. */
+	.grid-row-number-edited,
+	.grid-row-number-added {
+		border-left-color: CanvasText;
+	}
+
+	.grid-sort-arrow-asc {
+		border-bottom-color: CanvasText;
+	}
+
+	.grid-sort-arrow-desc {
+		border-top-color: CanvasText;
+	}
+
+	.grid-resize-column:hover,
+	.grid-resize-row:hover {
+		background-color: Highlight;
+	}
+}
