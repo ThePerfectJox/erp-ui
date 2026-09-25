@@ -5,6 +5,7 @@ import {
 	Button,
 	Checkbox,
 	CheckboxGroup,
+	ComboBox,
 	DateInput,
 	FileInput,
 	Form,
@@ -62,6 +63,39 @@ const CURRENCIES = [
 	{ value: 'SGD', label: 'SGD — Singapore Dollar' },
 ]
 
+/* Long enough that scrolling a native <select> stops being reasonable, which is
+ * the case ComboBox exists for. */
+const MATERIALS = [
+	{ value: 'R-1104', label: 'R-1104 — Steel sheet 2mm', description: 'Raw material · 1,240 EA on hand' },
+	{ value: 'R-1105', label: 'R-1105 — Steel sheet 3mm', description: 'Raw material · 80 EA on hand' },
+	{ value: 'R-1106', label: 'R-1106 — Steel sheet 4mm', description: 'Raw material · none on hand' },
+	{ value: 'R-2201', label: 'R-2201 — Aluminium coil 0.8mm', description: 'Raw material · 415 KG on hand' },
+	{ value: 'R-2202', label: 'R-2202 — Aluminium coil 1.2mm', description: 'Raw material · 38 KG on hand' },
+	{ value: 'H-4010', label: 'H-4010 — Hex bolt M8×40', description: 'Hardware · 12,900 EA on hand' },
+	{ value: 'H-4011', label: 'H-4011 — Hex bolt M10×50', description: 'Hardware · 8,410 EA on hand' },
+	{ value: 'H-4012', label: 'H-4012 — Washer M8', description: 'Hardware · 44,000 EA on hand' },
+	{ value: 'P-8800', label: 'P-8800 — Powder coat, signal white', description: 'Consumable · 96 L on hand' },
+	{ value: 'P-8801', label: 'P-8801 — Powder coat, graphite grey', description: 'Consumable · 12 L on hand' },
+	{ value: 'P-8802', label: 'P-8802 — Powder coat, deep blue', description: 'Blocked for procurement', isDisabled: true },
+	{ value: 'C-0450', label: 'C-0450 — Cardboard sleeve 400×300', description: 'Packaging · 2,600 EA on hand' },
+	{ value: 'C-0451', label: 'C-0451 — Pallet, Euro', description: 'Packaging · 310 EA on hand' },
+	{ value: 'S-9001', label: 'S-9001 — Freight, road, EU domestic', description: 'Service · no stock' },
+	{ value: 'S-9002', label: 'S-9002 — Freight, sea, FCL', description: 'Service · no stock' },
+]
+
+const COST_CENTRES = [
+	{ value: '4210', label: '4210 — Production Hamburg' },
+	{ value: '4220', label: '4220 — Production Rotterdam' },
+	{ value: '4310', label: '4310 — Maintenance' },
+	{ value: '4410', label: '4410 — Quality assurance' },
+	{ value: '5100', label: '5100 — Inbound logistics' },
+	{ value: '5200', label: '5200 — Outbound logistics' },
+	{ value: '6100', label: '6100 — Research and development' },
+	{ value: '7100', label: '7100 — Sales, Northern Europe' },
+	{ value: '7200', label: '7200 — Sales, APAC' },
+	{ value: '9000', label: '9000 — Administration' },
+]
+
 const PRIORITIES = [
 	{ value: 'standard', label: 'Standard', description: 'Ships within 5 working days.' },
 	{ value: 'express', label: 'Express', description: 'Next working day. Surcharge applies.' },
@@ -86,6 +120,8 @@ function PurchaseOrderScreen() {
 	const [supplier, setSupplier] = useState('Nordwind Handel GmbH')
 	const [email, setEmail] = useState('bestellung@')
 	const [plant, setPlant] = useState('1000')
+	const [material, setMaterial] = useState('R-1104')
+	const [costCentre, setCostCentre] = useState('')
 	const [currency, setCurrency] = useState('EUR')
 	const [quantity, setQuantity] = useState('120')
 	const [price, setPrice] = useState('18.40')
@@ -176,6 +212,30 @@ function PurchaseOrderScreen() {
 					</FormSection>
 
 					<FormSection title="Item 00010" description="Raw material R-1104 — Steel sheet 2mm">
+						<FormRow>
+							{/* Fifteen options with codes people know by heart —
+							  * the case a native <select> handles badly. */}
+							<ComboBox
+								label="Material"
+								name="material"
+								placeholder="Search by number or description"
+								options={MATERIALS}
+								value={material}
+								onChange={setMaterial}
+								hint="Type a material number or part of its description."
+								isRequired
+							/>
+							<ComboBox
+								label="Cost centre"
+								name="costCentre"
+								placeholder="Search cost centres"
+								options={COST_CENTRES}
+								value={costCentre}
+								onChange={setCostCentre}
+								isClearable
+							/>
+						</FormRow>
+
 						<FormRow columns={3}>
 							<NumberInput
 								label="Order quantity (EA)"

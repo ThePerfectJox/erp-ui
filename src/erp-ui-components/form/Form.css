@@ -1304,3 +1304,270 @@ legend.form-field-label {
 		color: GrayText;
 	}
 }
+
+/* ---------------------------------------------------------------------------
+ * ComboBox — the searchable dropdown
+ * -------------------------------------------------------------------------*/
+
+/* Markup:
+ *
+ *   div.form-combobox                    positioning context for the popup
+ *     div.form-combobox-shell            the field box
+ *       input.form-control.form-combobox-input
+ *       button.form-combobox-clear       optional
+ *       span.form-combobox-chevron
+ *     div.form-combobox-popup            absolute, only while open
+ *       ul.form-combobox-list[role=listbox]
+ *         li.form-combobox-option[role=option]
+ *     input[type=hidden]                 carries the value, not the label
+ *
+ * The field itself reuses .form-control, so it inherits the fill, the
+ * underline and all four value states from the rules above without restating
+ * any of it. Only the popup and the trailing controls are new here. */
+
+.form-combobox {
+	position: relative;
+	min-width: 0;
+}
+
+.form-combobox-shell {
+	position: relative;
+	display: flex;
+	min-width: 0;
+}
+
+/* Room for the chevron, and for the clear button when it is there. Reserved
+ * unconditionally so the text does not reflow the moment a selection is made. */
+.form-combobox-input {
+	padding-right: var(--space-8);
+	cursor: text;
+}
+
+/* --- Chevron ---
+ * Same construction as the select's and the sidebar's, so all three match. */
+.form-combobox-chevron {
+	position: absolute;
+	top: 50%;
+	right: var(--control-padding-x);
+	width: 0.4375rem;
+	height: 0.4375rem;
+	border-right: 1px solid var(--color-text-muted);
+	border-bottom: 1px solid var(--color-text-muted);
+	transform: translateY(-75%) rotate(45deg);
+	pointer-events: none;
+	transition: transform var(--transition-fast);
+}
+
+/* Points up while the popup is open. The input carries aria-expanded, so the
+ * state is read from the accessibility attribute rather than from a class
+ * someone has to remember to keep in sync. */
+.form-combobox-input[aria-expanded='true'] ~ .form-combobox-chevron {
+	transform: translateY(-25%) rotate(-135deg);
+}
+
+.form-field-readonly .form-combobox-chevron,
+.form-field-disabled .form-combobox-chevron {
+	display: none;
+}
+
+/* --- Clear button ---
+ * Sits inboard of the chevron. Overrides the <button> baseline in index.css
+ * down to a bare 20px hit area. */
+.form-combobox-clear {
+	position: absolute;
+	top: 50%;
+	right: var(--space-5);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.25rem;
+	height: 1.25rem;
+	min-height: 0;
+	padding: 0;
+	transform: translateY(-50%);
+	background: none;
+	border: none;
+	border-radius: var(--radius-sm);
+	color: var(--color-text-muted);
+	cursor: pointer;
+}
+
+.form-combobox-clear:hover {
+	background-color: var(--color-chrome-hover);
+	color: var(--color-text);
+}
+
+/* An X drawn from two rotated 1px bars, so it needs no icon asset and tracks
+ * currentColor. The bars are the ::before and ::after of the inner span —
+ * pseudo-elements on a <span> are safe, unlike on an <input>. */
+.form-combobox-clear-mark {
+	position: relative;
+	width: 0.625rem;
+	height: 0.625rem;
+}
+
+.form-combobox-clear-mark::before,
+.form-combobox-clear-mark::after {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: 0;
+	width: 100%;
+	height: 1px;
+	background-color: currentColor;
+}
+
+.form-combobox-clear-mark::before {
+	transform: rotate(45deg);
+}
+
+.form-combobox-clear-mark::after {
+	transform: rotate(-45deg);
+}
+
+/* --- Popup --- */
+
+/* Absolute, so opening the list does not push the rest of the form down.
+ *
+ * A caveat worth knowing: an absolutely positioned popup is clipped by any
+ * ancestor that scrolls or hides its overflow. Nothing in this form does, so
+ * this is correct here and needs no JavaScript to maintain. Put a ComboBox
+ * inside a scrolling panel and the list will be cut off — that case wants the
+ * popover API or an anchored portal, which is a different component. */
+.form-combobox-popup {
+	position: absolute;
+	top: calc(100% + 0.25rem);
+	left: 0;
+	right: 0;
+
+	/* Above the sticky action bar, which sets z-index: 1. */
+	z-index: 10;
+
+	background-color: var(--color-surface);
+	border: 1px solid var(--color-border-strong);
+	border-radius: var(--radius-sm);
+
+	/* The heaviest shadow in the set. A popup floating over a white card has no
+	 * tonal edge of its own, so it needs the hairline ring that --shadow-md
+	 * leads with to read as a separate surface at all. */
+	box-shadow: var(--shadow-md);
+
+	overflow: hidden;
+}
+
+.form-combobox-list {
+	margin: 0;
+	padding: var(--space-1) 0;
+	list-style: none;
+
+	/* Caps the popup at roughly eight rows and scrolls past that. Tall enough to
+	 * be worth scanning, short enough not to cover the whole form. */
+	max-height: 17.5rem;
+	overflow-y: auto;
+}
+
+.form-combobox-option {
+	display: flex;
+	flex-direction: column;
+	row-gap: 0.0625rem;
+	padding: var(--space-2) var(--space-3);
+	cursor: pointer;
+
+	/* The keyboard highlight is drawn with a left bar, which needs a
+	 * transparent one on every row so nothing shifts sideways as it moves. */
+	border-left: 3px solid transparent;
+}
+
+.form-combobox-option-label {
+	color: var(--color-text);
+	font-size: var(--text-md);
+}
+
+.form-combobox-option-description {
+	color: var(--color-text-subtle);
+	font-size: var(--text-xs);
+}
+
+/* The matched substring. <mark>'s default is a yellow block, which fights the
+ * blue; this keeps the tint and carries the weight instead. */
+.form-combobox-match {
+	background-color: var(--color-primary-soft);
+	color: var(--color-primary-active);
+	font-weight: var(--weight-bold);
+	border-radius: 0.125rem;
+}
+
+/* --- Option states ---
+ * Three of them, and they have to be distinguishable from each other, not just
+ * from a plain row:
+ *
+ *   active     where the keyboard is now   tinted fill + left bar
+ *   selected   what is currently chosen    bold text + a tick
+ *   both       tinted fill + bar + bold + tick
+ *
+ * Hover sets `active` too, via onMouseEnter in the component, so the mouse and
+ * the keyboard can never disagree about which row is next. */
+
+.form-combobox-option-active {
+	background-color: var(--color-primary-soft);
+	border-left-color: var(--color-primary);
+}
+
+.form-combobox-option-selected .form-combobox-option-label {
+	font-weight: var(--weight-bold);
+	color: var(--color-primary-active);
+}
+
+/* The tick. Marks the chosen row with a shape as well as with weight, so it is
+ * still findable in a list where several rows are bold for other reasons. */
+.form-combobox-option-selected .form-combobox-option-label::after {
+	content: '';
+	display: inline-block;
+	width: 0.3125rem;
+	height: 0.5625rem;
+	margin-left: var(--space-2);
+	border-right: 2px solid currentColor;
+	border-bottom: 2px solid currentColor;
+	transform: rotate(45deg) translateY(-0.0625rem);
+}
+
+.form-combobox-option-disabled {
+	cursor: not-allowed;
+	opacity: 0.4;
+}
+
+.form-combobox-option-disabled.form-combobox-option-active {
+	background-color: transparent;
+	border-left-color: transparent;
+}
+
+.form-combobox-empty {
+	margin: 0;
+	padding: var(--space-3);
+	color: var(--color-text-muted);
+	font-size: var(--text-sm);
+	text-align: center;
+}
+
+@media (forced-colors: active) {
+	.form-combobox-popup {
+		border: 1px solid CanvasText;
+	}
+
+	/* The tinted fill disappears in forced colours, so the highlight falls back
+	 * to the system's own selection pair. */
+	.form-combobox-option-active {
+		background-color: Highlight;
+		border-left-color: Highlight;
+	}
+
+	.form-combobox-option-active .form-combobox-option-label,
+	.form-combobox-option-active .form-combobox-option-description {
+		color: HighlightText;
+	}
+
+	.form-combobox-match {
+		background-color: Mark;
+		color: MarkText;
+	}
+}
