@@ -1,11 +1,17 @@
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 import warehouseIcon from '../assets/warehouse.svg'
 import Sidebar from './Sidebar/Sidebar'
 import SidebarMenu from './Sidebar/SidebarMenu'
 import SidebarSubMenu from './Sidebar/SidebarSubMenu'
 import './Layout.css'
 
-function Layout() {
+interface LayoutProps {
+    /** The screen, rendered in the content column beside the navigation rail. */
+    children?: ReactNode
+}
+
+function Layout({ children }: LayoutProps) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     return <div className="layout">
@@ -23,7 +29,9 @@ function Layout() {
                 <SidebarSubMenu description="Sub Menu 2" link="/menu-3/sub-menu-2" />
             </SidebarMenu>
         </Sidebar>
-        <main className="layout-content" />
+        <main className="layout-content">
+            {children}
+        </main>
     </div>
 }
 

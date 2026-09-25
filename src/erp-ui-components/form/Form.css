@@ -1,0 +1,1306 @@
+/* =============================================================================
+ * Form components — SAP Fiori field styling
+ * =============================================================================
+ *
+ * Markup, from the outside in:
+ *
+ *   form.form.form-labels-above.form-density-cozy
+ *     section.form-section
+ *       div.form-section-header  > h3.form-section-title + p.form-section-description
+ *       div.form-section-body
+ *         div.form-row.form-row-2
+ *           div.form-field.form-field-stacked
+ *             label.form-field-label
+ *             div.form-field-control
+ *               input.form-control
+ *               p.form-field-hint
+ *               p.form-field-message
+ *     div.form-actions
+ *       button.form-button.form-button-emphasized
+ *
+ * -----------------------------------------------------------------------------
+ * ONE idea drives this file: state lives in variables, not in selectors
+ * -----------------------------------------------------------------------------
+ * .form-field declares three custom properties for the look of the control
+ * inside it:
+ *
+ *   --field-fill         the box's fill
+ *   --field-line         the line under it
+ *   --field-line-width   how thick that line is
+ *
+ * .form-control and friends only ever read those. So every state — error,
+ * warning, success, information, read-only, hover, focus — is three or four
+ * declarations on .form-field, and it applies to text inputs, selects,
+ * textareas and affixed fields at once, without any of them being named again.
+ *
+ * -----------------------------------------------------------------------------
+ * Why the fields look like this
+ * -----------------------------------------------------------------------------
+ * A Fiori field is a FILLED box with a single line under it, not an outlined
+ * box. Filled means "you can type here" and is legible at a glance across a
+ * screen of forty fields, which an outline is not. The line under it is drawn
+ * as a background gradient rather than as border-bottom, which is also how SAP
+ * does it: a real bottom border follows the 4px corner radius and curls up at
+ * both ends, while a gradient stays straight and full width.
+ *
+ * The three states then differ in SHAPE, not just in colour:
+ *
+ *   editable    grey fill      solid 1px line
+ *   read-only   no fill        dashed 1px line
+ *   invalid     pink fill      solid 2px line
+ *
+ * which is why they survive greyscale, a cheap projector and colour blindness.
+ * ---------------------------------------------------------------------------*/
+
+/* ---------------------------------------------------------------------------
+ * Form shell
+ * -------------------------------------------------------------------------*/
+
+.form {
+	display: flex;
+	flex-direction: column;
+	row-gap: var(--space-6);
+
+	/* Fields declare `--field-*`, but a <Button> or a stray control that is not
+	 * inside a .form-field still needs them to resolve. Seeding the defaults on
+	 * the form means nothing renders unstyled just because it sits outside a
+	 * field. */
+	--field-fill: var(--color-surface-sunken);
+	--field-line: var(--color-field-border);
+	--field-line-width: 1px;
+}
+
+/* Compact density works by reassigning the global control height for this
+ * subtree. Everything sized from --control-height — inputs, selects, buttons,
+ * the switch — follows without being mentioned here. */
+.form-density-compact {
+	--control-height: var(--control-height-compact);
+}
+
+/* Caps field width without capping the form's own width, so section headings
+ * and message strips still run the full measure while the inputs under them
+ * stay scannable. */
+.form-narrow .form-field-control {
+	max-width: 32rem;
+}
+
+/* ---------------------------------------------------------------------------
+ * Sections
+ * -------------------------------------------------------------------------*/
+
+.form-section {
+	display: flex;
+	flex-direction: column;
+	row-gap: var(--space-4);
+}
+
+.form-section-header {
+	display: flex;
+	flex-direction: column;
+	row-gap: var(--space-1);
+
+	/* The rule under a section title is what turns a long form into a set of
+	 * named blocks. */
+	padding-bottom: var(--space-2);
+	border-bottom: 1px solid var(--color-border);
+}
+
+.form-section-title {
+	margin: 0;
+	color: var(--color-text);
+	font-size: var(--text-lg);
+	font-weight: var(--weight-bold);
+}
+
+.form-section-description {
+	margin: 0;
+	color: var(--color-text-muted);
+	font-size: var(--text-sm);
+}
+
+.form-section-body {
+	display: flex;
+	flex-direction: column;
+	row-gap: var(--space-4);
+}
+
+/* ---------------------------------------------------------------------------
+ * Rows
+ * -------------------------------------------------------------------------*/
+
+.form-row {
+	display: grid;
+
+	/* Wider than the row gap: fields side by side need to read as separate
+	 * fields, and a 1rem gutter is not enough once each one has a label. */
+	column-gap: var(--space-5);
+	row-gap: var(--space-4);
+
+	/* A grid item's min-width is auto, which lets a long <option> or an
+	 * unbreakable word push a column past its share and overflow the row.
+	 * minmax(0, 1fr) is what stops that. */
+	grid-template-columns: minmax(0, 1fr);
+}
+
+.form-row-2 {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-row-3 {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* One column on narrow screens, whatever the row asked for. Two labelled
+ * fields do not fit side by side on a phone. */
+@media (max-width: 767px) {
+	.form-row-2,
+	.form-row-3 {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+/* ---------------------------------------------------------------------------
+ * Field wrapper and the state variables
+ * -------------------------------------------------------------------------*/
+
+.form-field {
+	display: flex;
+	flex-direction: column;
+	row-gap: var(--space-1);
+
+	/* Editable: the default. Every state below is a change to these. */
+	--field-fill: var(--color-surface-sunken);
+	--field-line: var(--color-field-border);
+	--field-line-width: 1px;
+
+	/* Colour of the hint and message text. Neutral until a state says
+	 * otherwise. */
+	--field-message-color: var(--color-text-muted);
+
+	/* <fieldset> arrives with a border, a margin and its own padding. */
+	margin: 0;
+	padding: 0;
+	border: none;
+	min-width: 0;
+}
+
+.form-field-control {
+	display: flex;
+	flex-direction: column;
+	row-gap: var(--space-1);
+	min-width: 0;
+}
+
+/* --- Value states ---
+ * Each one changes the fill, the line, the line's weight and the message
+ * colour together, so no state is ever signalled by colour alone: the 2px line
+ * is a visible weight change and the message text is a whole extra element. */
+
+.form-field-error {
+	--field-fill: var(--color-danger-soft);
+	--field-line: var(--color-danger-border);
+	--field-line-width: 2px;
+	--field-message-color: var(--color-danger);
+}
+
+.form-field-warning {
+	--field-fill: var(--color-warning-soft);
+	--field-line: var(--color-warning-border);
+	--field-line-width: 2px;
+	--field-message-color: var(--color-warning);
+}
+
+.form-field-success {
+	--field-fill: var(--color-success-soft);
+	--field-line: var(--color-success-border);
+	--field-line-width: 2px;
+	--field-message-color: var(--color-success);
+}
+
+.form-field-information {
+	--field-fill: var(--color-info-soft);
+	--field-line: var(--color-info-border);
+	--field-line-width: 2px;
+	--field-message-color: var(--color-info);
+}
+
+/* --- Read-only ---
+ * No fill and a dashed line. Deliberately a different SHAPE from both editable
+ * and disabled rather than a paler version of either: the value is live and
+ * worth reading, it just cannot be changed here. Wins over the value states
+ * above by coming later in the file. */
+.form-field-readonly {
+	--field-fill: transparent;
+	--field-line-width: 1px;
+}
+
+/* --- Disabled ---
+ * Fiori fades the whole control rather than recolouring its parts, which keeps
+ * the field recognisably the same field. Note this drops contrast below the
+ * WCAG minimum — permitted for disabled controls (1.4.3), and the reason
+ * read-only exists for anything the user still has to read. */
+.form-field-disabled {
+	opacity: 0.4;
+}
+
+.form-field-disabled .form-control,
+.form-field-disabled .form-checkbox,
+.form-field-disabled .form-radio,
+.form-field-disabled .form-switch-input,
+.form-field-disabled .form-field-label,
+.form-field-disabled .form-field-inline-label,
+.form-field-disabled .form-choice-label {
+	cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------------------------
+ * Labels
+ * -------------------------------------------------------------------------*/
+
+.form-field-label {
+	color: var(--color-text-muted);
+	font-size: var(--text-sm);
+	font-weight: var(--weight-normal);
+	line-height: var(--leading-normal);
+}
+
+/* A <legend> is positioned into the fieldset's border by default and ignores
+ * most layout properties until this is undone. */
+legend.form-field-label {
+	float: none;
+	width: auto;
+	margin: 0;
+	padding: 0;
+}
+
+.form-field-required {
+	margin-left: 0.125rem;
+	color: var(--color-required);
+	font-weight: var(--weight-bold);
+}
+
+/* Off-screen but still in the accessibility tree. Not `display: none` and not
+ * `visibility: hidden` — both remove it from that tree too, which defeats the
+ * point of keeping the label at all. */
+.form-field-label-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* --- Labels beside their fields ---
+ * The dense ERP maintenance-screen layout. Every field on the screen shares
+ * --form-label-width, so all the controls start on the same x position however
+ * long the individual labels are.
+ *
+ * Group fields (radio and checkbox groups) are left out on purpose and always
+ * stack their caption: a <legend> is positioned into its fieldset's border box
+ * and cannot be placed by grid or flex reliably across browsers. A caption
+ * above a list of options reads perfectly well regardless. */
+@media (min-width: 768px) {
+	.form-labels-beside .form-field-stacked,
+	.form-field-label-beside {
+		display: grid;
+		grid-template-columns: var(--form-label-width) minmax(0, 1fr);
+		align-items: start;
+		column-gap: var(--space-4);
+		row-gap: 0;
+	}
+
+	.form-labels-beside .form-field-stacked > .form-field-label,
+	.form-field-label-beside > .form-field-label {
+		/* Nudges the label onto the control's first line rather than the top of
+		 * its box. The label is smaller than the control is tall, so without
+		 * this it sits high and reads as belonging to the field above. */
+		padding-top: 0.4375rem;
+	}
+
+	/* Inline fields (checkbox, switch) have no separate label element — the
+	 * caption is inside the control column. Left alone they would sit in the
+	 * label gutter and break the alignment, so the column is skipped
+	 * explicitly. */
+	.form-labels-beside .form-field-inline {
+		display: grid;
+		grid-template-columns: var(--form-label-width) minmax(0, 1fr);
+		column-gap: var(--space-4);
+	}
+
+	.form-labels-beside .form-field-inline > .form-field-control {
+		grid-column: 2;
+	}
+
+	/* A field that opts back out of the shared gutter. */
+	.form-labels-beside .form-field-label-above {
+		display: flex;
+		flex-direction: column;
+		row-gap: var(--space-1);
+	}
+
+	.form-labels-beside .form-field-label-above > .form-field-label {
+		padding-top: 0;
+	}
+}
+
+/* ---------------------------------------------------------------------------
+ * Hints and messages
+ * -------------------------------------------------------------------------*/
+
+.form-field-hint {
+	margin: 0;
+	color: var(--color-text-subtle);
+	font-size: var(--text-xs);
+}
+
+/* Takes its colour from the field's state variable, so all four states are
+ * handled by this one rule. Semibold because a message that has to be hunted
+ * for is a message that gets missed. */
+.form-field-message {
+	margin: 0;
+	color: var(--field-message-color);
+	font-size: var(--text-xs);
+	font-weight: var(--weight-semibold);
+}
+
+/* ---------------------------------------------------------------------------
+ * Controls — the shared field box
+ * -------------------------------------------------------------------------*/
+
+.form-control {
+	width: 100%;
+	min-width: 0;
+	height: var(--control-height);
+	padding: 0 var(--control-padding-x);
+
+	color: var(--color-text);
+	font-family: inherit;
+	font-size: var(--text-md);
+
+	/* The fill and the line. SAP draws the line as a background gradient
+	 * pinned to the bottom edge rather than as border-bottom, because a real
+	 * border follows the 4px radius and curls up at both ends. A gradient
+	 * stays straight and spans the full width.
+	 *
+	 * background-size carries the line's weight, so a 2px invalid line needs
+	 * no other change. */
+	background-color: var(--field-fill);
+	background-image: linear-gradient(0deg, var(--field-line), var(--field-line));
+	background-position: 0 100%;
+	background-size: 100% var(--field-line-width);
+	background-repeat: no-repeat;
+
+	border: none;
+	border-radius: var(--radius-sm);
+	appearance: none;
+
+	transition: background-color var(--transition-fast);
+}
+
+/* A dashed line cannot come out of a single linear-gradient, so read-only swaps
+ * in a repeating 4px-on / 2px-off tile — SAP's own
+ * sapField_ReadOnly_BackgroundStyle. */
+.form-field-readonly .form-control,
+.form-field-readonly .form-control-shell {
+	background-image: linear-gradient(
+		90deg,
+		var(--field-line) 0,
+		var(--field-line) 0.25rem,
+		transparent 0.25rem
+	);
+	background-size: 0.375rem var(--field-line-width);
+	background-repeat: repeat-x;
+}
+
+.form-field-readonly .form-control {
+	cursor: default;
+}
+
+.form-control::placeholder {
+	color: var(--color-text-subtle);
+
+	/* Firefox fades placeholders by default, which puts them under the
+	 * contrast minimum. */
+	opacity: 1;
+}
+
+/* Hover lifts the fill to white and turns the line brand blue — the same blue
+ * that means "interactive" everywhere else in the app. It is the cheapest
+ * possible confirmation that a field is editable, and read-only and disabled
+ * fields are excluded precisely because they are not.
+ *
+ * `:where()` keeps this at one-class specificity so the value-state rules
+ * further down still win on the line colour. */
+.form-field:not(.form-field-readonly, .form-field-disabled) :where(.form-control:hover) {
+	--field-fill: var(--color-surface);
+	--field-line: var(--color-primary-hover);
+}
+
+/* Focus keeps the white fill so arriving from hover is not a flash of grey. The
+ * ring itself comes from the global :focus-visible rule in index.css. */
+.form-field:not(.form-field-readonly) :where(.form-control:focus) {
+	--field-fill: var(--color-surface);
+}
+
+/* An invalid field keeps its red line on hover — the 2px red line is the whole
+ * signal, and repainting it blue on mouseover loses the error. Only the fill
+ * lifts. */
+.form-field-error :where(.form-control:hover, .form-control-shell:hover),
+.form-field-warning :where(.form-control:hover, .form-control-shell:hover),
+.form-field-success :where(.form-control:hover, .form-control-shell:hover),
+.form-field-information :where(.form-control:hover, .form-control-shell:hover) {
+	--field-fill: var(--color-surface);
+}
+
+/* --- Numbers ---
+ * Right-aligned so a column of amounts lines up on its last digit, which is
+ * the only way the magnitudes can be compared at a glance. Tabular figures
+ * stop the digits shifting as the value changes. */
+.form-control-numeric {
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+
+/* Chrome and Edge put spinners on number inputs that are too small to hit
+ * reliably and that eat the right-hand padding a right-aligned number needs. */
+.form-control-numeric::-webkit-outer-spin-button,
+.form-control-numeric::-webkit-inner-spin-button {
+	margin: 0;
+	appearance: none;
+}
+
+/* --- Textarea --- */
+.form-control-textarea {
+	/* `rows` sets the height, so the fixed control height must not. */
+	height: auto;
+	min-height: var(--control-height);
+	padding-top: var(--space-2);
+	padding-bottom: var(--space-2);
+	line-height: var(--leading-normal);
+
+	/* Vertical only: a horizontally resizable textarea can be dragged out past
+	 * the form that contains it. */
+	resize: vertical;
+}
+
+.form-control-counter {
+	margin: 0;
+	color: var(--color-text-subtle);
+	font-size: var(--text-xs);
+	font-variant-numeric: tabular-nums;
+	text-align: right;
+}
+
+/* --- Dates ---
+ * The picker button is the only thing saying this is a date field rather than a
+ * text one, so it is kept visible rather than being styled away. */
+.form-control-date::-webkit-calendar-picker-indicator {
+	cursor: pointer;
+	opacity: 0.6;
+}
+
+.form-control-date::-webkit-calendar-picker-indicator:hover {
+	opacity: 1;
+}
+
+/* Safari pads date inputs asymmetrically, which makes them taller than their
+ * neighbours in the same row. */
+.form-control-date::-webkit-date-and-time-value {
+	text-align: left;
+}
+
+/* ---------------------------------------------------------------------------
+ * Affixes — units and currency inside the field box
+ * -------------------------------------------------------------------------*/
+
+/* The shell takes over the fill and the line so the affix sits *inside* the
+ * field rather than beside it, and the input within goes transparent. */
+.form-control-shell {
+	display: flex;
+	align-items: stretch;
+	min-width: 0;
+
+	background-color: var(--field-fill);
+	background-image: linear-gradient(0deg, var(--field-line), var(--field-line));
+	background-position: 0 100%;
+	background-size: 100% var(--field-line-width);
+	background-repeat: no-repeat;
+	border-radius: var(--radius-sm);
+
+	transition: background-color var(--transition-fast);
+}
+
+.form-control-shell .form-control {
+	background-color: transparent;
+	background-image: none;
+	border-radius: 0;
+}
+
+.form-field:not(.form-field-readonly, .form-field-disabled) :where(.form-control-shell:hover) {
+	--field-fill: var(--color-surface);
+	--field-line: var(--color-primary-hover);
+}
+
+/* :focus-within, not :focus — the ring has to go round the whole box including
+ * the affixes, and the element actually focused is the input inside it. */
+.form-field:not(.form-field-readonly) :where(.form-control-shell:focus-within) {
+	--field-fill: var(--color-surface);
+}
+
+.form-control-shell:focus-within {
+	outline: 2px solid var(--color-focus-ring);
+	outline-offset: 2px;
+}
+
+/* The inner input's own ring would sit inside the shell's and read as a double
+ * border. */
+.form-control-shell .form-control:focus-visible {
+	outline: none;
+}
+
+.form-control-affix {
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+	padding: 0 var(--control-padding-x);
+	color: var(--color-text-muted);
+	font-size: var(--text-md);
+
+	/* Units are read alongside the number, never selected with it — dragging
+	 * across an amount should not pick up "EA". */
+	user-select: none;
+	white-space: nowrap;
+}
+
+/* A prefix is immediately followed by the value, so the input drops its own
+ * left padding; same on the other side for a suffix. Without this there is a
+ * visible gap between "€" and the number. */
+.form-control-prefix + .form-control {
+	padding-left: 0;
+}
+
+.form-control-shell .form-control:has(+ .form-control-suffix) {
+	padding-right: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * Select
+ * -------------------------------------------------------------------------*/
+
+.form-select-shell {
+	position: relative;
+	display: flex;
+	min-width: 0;
+}
+
+.form-select {
+	/* Room for the chevron, which is drawn over the field rather than in it. */
+	padding-right: var(--space-6);
+	cursor: pointer;
+
+	/* Without this a <select> is as wide as its longest <option> and drags the
+	 * grid column out with it. */
+	min-width: 0;
+	text-overflow: ellipsis;
+}
+
+.form-field-readonly .form-select {
+	cursor: default;
+}
+
+/* Two borders of a square, rotated — the same construction the sidebar's
+ * chevron uses, so the two match. currentColor would resolve against this
+ * span rather than the field, so the colour is named. */
+.form-select-chevron {
+	position: absolute;
+	top: 50%;
+	right: var(--control-padding-x);
+	width: 0.4375rem;
+	height: 0.4375rem;
+	border-right: 1px solid var(--color-text-muted);
+	border-bottom: 1px solid var(--color-text-muted);
+
+	/* Rotated about its own centre, so -75% rather than -50% is what lands it
+	 * visually centred on the field. */
+	transform: translateY(-75%) rotate(45deg);
+
+	/* The chevron sits over the select; without this, clicking it does
+	 * nothing. */
+	pointer-events: none;
+}
+
+.form-field-readonly .form-select-chevron {
+	display: none;
+}
+
+/* ---------------------------------------------------------------------------
+ * Checkbox and radio
+ * -------------------------------------------------------------------------*/
+
+/* Both are `appearance: none` and drawn here, because a native checkbox cannot
+ * be recoloured and an unstyled one next to these fields looks like a bug.
+ *
+ * The marks are background-images rather than ::after pseudo-elements: an
+ * <input> is a void element, so pseudo-element support on it is a browser
+ * courtesy rather than a guarantee, while background-image is defined
+ * behaviour everywhere. */
+
+.form-checkbox,
+.form-radio {
+	/* Sized in rem so the box tracks the text size, and flex-shrink: 0 so it
+	 * never gets squeezed by a long label beside it. */
+	width: 1.125rem;
+	height: 1.125rem;
+	flex-shrink: 0;
+	margin: 0;
+
+	background-color: var(--color-surface);
+	background-position: center;
+	background-repeat: no-repeat;
+	border: 1px solid var(--color-field-border);
+	appearance: none;
+	cursor: pointer;
+
+	transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+/* Square for "any number of these", round for "one of these". The shape is the
+ * only thing telling the two apart, so it has to be unmistakable — hence a
+ * near-square 3px radius rather than a softer one. */
+.form-checkbox {
+	border-radius: 0.1875rem;
+}
+
+.form-radio {
+	border-radius: 50%;
+}
+
+.form-field:not(.form-field-readonly, .form-field-disabled) .form-checkbox:hover,
+.form-field:not(.form-field-readonly, .form-field-disabled) .form-radio:hover {
+	border-color: var(--color-primary-hover);
+}
+
+/* Checked: filled brand blue with a white tick. The tick is an inline SVG data
+ * URI — note `%23` for the `#` in the colour, or the browser reads the rest of
+ * the URL as a fragment identifier and the image silently fails to load. */
+.form-checkbox:checked {
+	background-color: var(--color-primary);
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3 8.5 3.5 3.5L13 4.5'/%3E%3C/svg%3E");
+	background-size: 0.8125rem;
+	border-color: var(--color-primary);
+}
+
+/* Indeterminate: a dash, not a tick. A "select all" box over a partly selected
+ * list is neither on nor off, and showing a tick there would be a lie. */
+.form-checkbox:indeterminate {
+	background-color: var(--color-primary);
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M4 8h8'/%3E%3C/svg%3E");
+	background-size: 0.8125rem;
+	border-color: var(--color-primary);
+}
+
+/* The radio keeps a white field with a blue dot rather than filling solid, so
+ * it stays visibly a different shape from a checked checkbox at a glance
+ * instead of becoming another blue square-ish blob. A radial-gradient is used
+ * rather than an SVG because the dot has to scale with the box. */
+.form-radio:checked {
+	background-image: radial-gradient(
+		circle at center,
+		var(--color-primary) 0,
+		var(--color-primary) 0.25rem,
+		transparent 0.25rem
+	);
+	border-color: var(--color-primary);
+	border-width: 1px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Choice lists — radio and checkbox groups
+ * -------------------------------------------------------------------------*/
+
+.form-choice-list {
+	display: flex;
+	row-gap: var(--space-2);
+	column-gap: var(--space-5);
+}
+
+.form-choice-list-vertical {
+	flex-direction: column;
+}
+
+/* Horizontal still wraps: three options that fit on a desktop will not fit in a
+ * narrow panel, and they should stack rather than overflow. */
+.form-choice-list-horizontal {
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+
+/* A two-column grid — control, then label — with the description spanning the
+ * second column underneath. That keeps a wrapped label and its description
+ * aligned to each other instead of to the box. */
+.form-choice {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	align-items: start;
+	column-gap: var(--space-2);
+	row-gap: 0;
+}
+
+/* Centres the box on the label's FIRST line, which `align-items: center` would
+ * not do once the label wraps to two — it would drift to the middle of the
+ * block. `baseline` is no good either: an input is a replaced element, so its
+ * baseline is its bottom edge and the box would ride high.
+ *
+ * (1.5 line-height × 0.875rem text − 1.125rem box) ÷ 2. */
+.form-choice > .form-checkbox,
+.form-choice > .form-radio {
+	margin-top: 0.09375rem;
+}
+
+.form-choice-label {
+	color: var(--color-text);
+	font-size: var(--text-md);
+	cursor: pointer;
+}
+
+.form-choice-description {
+	grid-column: 2;
+	margin: 0;
+	color: var(--color-text-subtle);
+	font-size: var(--text-xs);
+}
+
+/* ---------------------------------------------------------------------------
+ * Inline fields — checkbox and switch with the caption on the right
+ * -------------------------------------------------------------------------*/
+
+/* The <label> wraps the control, so the caption text is part of the hit area.
+ * On a 18px checkbox that is the difference between a comfortable target and a
+ * fiddly one. */
+.form-field-inline-label {
+	display: inline-flex;
+	align-items: center;
+	column-gap: var(--space-2);
+	cursor: pointer;
+
+	/* Only as wide as its contents, so the clickable area does not run to the
+	 * far edge of the form where there is nothing to click. */
+	align-self: flex-start;
+}
+
+/* An inline caption is the thing being switched, not a heading over it, so it
+ * takes body colour and body size rather than the small grey of a field label. */
+.form-field-inline .form-field-label {
+	color: var(--color-text);
+	font-size: var(--text-md);
+}
+
+.form-field-disabled .form-field-inline-label {
+	cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------------------------
+ * Switch
+ * -------------------------------------------------------------------------*/
+
+/* A real checkbox, made transparent and stretched over the track that is drawn
+ * beneath it. So hover, focus, click, space bar, form submission and screen
+ * reader support are all the browser's own — the visible part is only paint. */
+.form-switch {
+	position: relative;
+	display: inline-flex;
+	flex-shrink: 0;
+	width: 2.25rem;
+	height: 1.25rem;
+}
+
+.form-switch-input {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	opacity: 0;
+	cursor: pointer;
+
+	/* Above the track, so the click lands on the input. */
+	z-index: 1;
+}
+
+.form-switch-track {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	background-color: var(--color-surface);
+	border: 1px solid var(--color-field-border);
+	border-radius: var(--radius-pill);
+	transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.form-switch-knob {
+	position: absolute;
+	left: 0.125rem;
+	width: 0.875rem;
+	height: 0.875rem;
+	background-color: var(--color-field-border);
+	border-radius: var(--radius-pill);
+
+	/* Only the knob moves, and only horizontally, so the track stays put while
+	 * the state changes. */
+	transition: transform var(--transition-fast), background-color var(--transition-fast);
+}
+
+/* On: track fills brand blue, knob goes white and slides right. Both the fill
+ * and the position change, so the state is not carried by colour alone — it
+ * reads at a glance in greyscale. */
+.form-switch-input:checked + .form-switch-track {
+	background-color: var(--color-primary);
+	border-color: var(--color-primary);
+}
+
+.form-switch-input:checked + .form-switch-track .form-switch-knob {
+	/* 2.25rem track − 0.875rem knob − 2 × 0.125rem inset − 2 × 1px border. */
+	transform: translateX(1rem);
+	background-color: var(--color-surface);
+}
+
+.form-field:not(.form-field-readonly, .form-field-disabled) .form-switch-input:hover + .form-switch-track {
+	border-color: var(--color-primary-hover);
+}
+
+/* The input is invisible, so its own focus ring would be too. It is drawn on
+ * the track instead. */
+.form-switch-input:focus-visible {
+	outline: none;
+}
+
+.form-switch-input:focus-visible + .form-switch-track {
+	outline: 2px solid var(--color-focus-ring);
+	outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+ * File input
+ * -------------------------------------------------------------------------*/
+
+/* Kept as a real <input type="file"> and styled through
+ * ::file-selector-button. The usual alternative — hide the input, drive it from
+ * a button — breaks keyboard focus and drag-and-drop often enough not to be
+ * worth the tidier markup. */
+.form-control-file {
+	display: flex;
+	align-items: center;
+	padding: 0;
+	background-color: transparent;
+	background-image: none;
+	color: var(--color-text-muted);
+	font-size: var(--text-sm);
+	cursor: pointer;
+}
+
+/* Matches the default button, so "Choose file" reads as the same kind of thing
+ * as every other button on the screen. */
+.form-control-file::file-selector-button {
+	height: var(--control-height);
+	margin-right: var(--space-3);
+	padding: 0 var(--space-3);
+	color: var(--color-primary-hover);
+	font-family: inherit;
+	font-size: var(--text-md);
+	font-weight: var(--weight-semibold);
+	background-color: var(--color-surface);
+	border: 1px solid var(--color-border-strong);
+	border-radius: var(--radius-md);
+	cursor: pointer;
+	transition: background-color var(--transition-fast);
+}
+
+.form-control-file::file-selector-button:hover {
+	background-color: var(--color-chrome-hover);
+}
+
+.form-file-list {
+	display: flex;
+	flex-direction: column;
+	row-gap: var(--space-1);
+	margin: var(--space-1) 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.form-file-list-item {
+	display: flex;
+	align-items: baseline;
+	column-gap: var(--space-3);
+	padding: var(--space-1) var(--space-2);
+	background-color: var(--color-surface-sunken);
+	border-radius: var(--radius-sm);
+	font-size: var(--text-sm);
+}
+
+.form-file-name {
+	min-width: 0;
+	flex-grow: 1;
+	color: var(--color-text);
+
+	/* A long file name truncates rather than wrapping to four lines, and keeps
+	 * the extension visible, which is the part that matters. */
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	direction: rtl;
+	text-align: left;
+}
+
+.form-file-size {
+	flex-shrink: 0;
+	color: var(--color-text-subtle);
+	font-size: var(--text-xs);
+	font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------------------
+ * Buttons
+ * -------------------------------------------------------------------------*/
+
+/* Overrides the bare <button> baseline in index.css. Class selectors outrank
+ * the element selector there, so nothing needs !important.
+ *
+ * The variants are ordered by loudness on purpose: transparent, default, then
+ * the three filled ones. A screen should read as one filled button and however
+ * many quiet ones it needs. */
+
+.form-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	column-gap: var(--space-2);
+
+	min-height: var(--control-height);
+	padding: 0 var(--space-3);
+
+	font-family: inherit;
+	font-size: var(--text-md);
+	font-weight: var(--weight-semibold);
+	line-height: var(--leading-tight);
+
+	border: 1px solid transparent;
+	border-radius: var(--radius-md);
+	cursor: pointer;
+
+	/* A button in a toolbar should not be stretched by its flex parent, and its
+	 * label should not wrap mid-word. */
+	flex-shrink: 0;
+	white-space: nowrap;
+
+	transition: background-color var(--transition-fast), border-color var(--transition-fast),
+		color var(--transition-fast);
+}
+
+.form-button-compact {
+	min-height: var(--control-height-compact);
+	padding: 0 var(--space-2);
+	font-size: var(--text-sm);
+}
+
+.form-button-full-width {
+	width: 100%;
+}
+
+/* Square, so a lone icon is optically centred rather than sitting in a wide
+ * pill. The min-width is what stops it collapsing to the icon's width. */
+.form-button-icon-only {
+	min-width: var(--control-height);
+	padding: 0;
+}
+
+.form-button-compact.form-button-icon-only {
+	min-width: var(--control-height-compact);
+}
+
+.form-button:disabled {
+	cursor: not-allowed;
+
+	/* Fades whatever the variant painted, rather than each variant having to
+	 * declare its own disabled colours. Below the WCAG contrast minimum, which
+	 * 1.4.3 permits for a disabled control. */
+	opacity: 0.4;
+}
+
+/* --- Default: white, grey border, blue label ---
+ * The workhorse. A screen can carry a dozen of these with no filled block on
+ * it, which is what leaves the one filled button unmistakable. */
+.form-button-default {
+	color: var(--color-primary-hover);
+	background-color: var(--color-surface);
+	border-color: var(--color-border-strong);
+}
+
+.form-button-default:hover:not(:disabled) {
+	background-color: var(--color-chrome-hover);
+}
+
+.form-button-default:active:not(:disabled) {
+	background-color: var(--color-primary-soft);
+	border-color: var(--color-primary-hover);
+}
+
+/* --- Emphasized: the one action the screen is for ---
+ * Bold as well as filled, matching sapButton_Emphasized_FontFamily, which is
+ * SAP's bold face rather than the semibold the other buttons use. */
+.form-button-emphasized {
+	color: var(--color-on-primary);
+	background-color: var(--color-primary);
+	border-color: var(--color-primary);
+	font-weight: var(--weight-bold);
+}
+
+.form-button-emphasized:hover:not(:disabled) {
+	background-color: var(--color-primary-hover);
+	border-color: var(--color-primary-hover);
+}
+
+.form-button-emphasized:active:not(:disabled) {
+	background-color: var(--color-primary-active);
+	border-color: var(--color-primary-active);
+}
+
+/* --- Transparent: no border until hovered ---
+ * For toolbars and table rows, where a row of bordered buttons reads as a
+ * fence. It still has a 1px transparent border from .form-button, so nothing
+ * shifts by a pixel when the border appears on hover. */
+.form-button-transparent {
+	color: var(--color-primary-hover);
+	background-color: transparent;
+}
+
+.form-button-transparent:hover:not(:disabled) {
+	background-color: var(--color-chrome-hover);
+	border-color: var(--color-border-strong);
+}
+
+.form-button-transparent:active:not(:disabled) {
+	background-color: var(--color-primary-soft);
+	border-color: var(--color-primary-hover);
+}
+
+/* --- Positive and negative ---
+ * Filled, so they carry the same weight as emphasized. Reserved for actions
+ * with a consequence — post, release, delete — never used for decoration. */
+.form-button-positive {
+	color: var(--color-text-inverse);
+	background-color: var(--color-success);
+	border-color: var(--color-success);
+}
+
+.form-button-positive:hover:not(:disabled),
+.form-button-positive:active:not(:disabled) {
+	background-color: #1c5a2d;
+	border-color: #1c5a2d;
+}
+
+.form-button-negative {
+	color: var(--color-text-inverse);
+	background-color: var(--color-danger);
+	border-color: var(--color-danger);
+}
+
+.form-button-negative:hover:not(:disabled),
+.form-button-negative:active:not(:disabled) {
+	background-color: var(--color-danger-hover);
+	border-color: var(--color-danger-hover);
+}
+
+/* --- Logo ---
+ * 1rem square, matching sapContent_IconHeight. */
+.form-button-logo {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 1rem;
+	height: 1rem;
+}
+
+.form-button-logo img,
+.form-button-logo svg {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+/* An inline <svg> passed as a node inherits the button's text colour, so one
+ * icon works on a white button and on a filled blue one without a second
+ * asset. An <img> cannot do this — it paints its own fill — which is the
+ * reason Button accepts a node as well as a URL. */
+.form-button-logo svg {
+	fill: currentColor;
+}
+
+.form-button-label {
+	/* Keeps the label from being squeezed to nothing by a logo when the button
+	 * is in a tight flex row. */
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* --- Loading ---
+ * The spinner takes the logo's slot rather than being added beside it, so the
+ * button does not grow by an icon's width the moment it is pressed and shove
+ * the rest of the toolbar sideways. */
+.form-button-loading {
+	cursor: progress;
+}
+
+.form-button-spinner {
+	width: 1rem;
+	height: 1rem;
+	flex-shrink: 0;
+
+	/* Three sides of the ring in the button's own text colour and one left
+	 * transparent — that gap is what makes the rotation visible. */
+	border: 2px solid currentColor;
+	border-top-color: transparent;
+	border-radius: 50%;
+	opacity: 0.8;
+
+	animation: form-button-spin 600ms linear infinite;
+}
+
+@keyframes form-button-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* ---------------------------------------------------------------------------
+ * Action bar
+ * -------------------------------------------------------------------------*/
+
+.form-actions {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	column-gap: var(--space-2);
+	row-gap: var(--space-2);
+	padding-top: var(--space-4);
+	border-top: 1px solid var(--color-border);
+}
+
+/* Buttons are written in visual order and laid out in that order — never
+ * reversed with row-reverse, which would make the tab order run right-to-left
+ * while the buttons read left-to-right. That is the focus-order trap in
+ * WCAG 2.4.3. */
+.form-actions-start {
+	justify-content: flex-start;
+}
+
+.form-actions-end {
+	justify-content: flex-end;
+}
+
+.form-actions-space-between {
+	justify-content: space-between;
+}
+
+/* For long maintenance screens: Save stays reachable without scrolling to the
+ * end of a hundred fields. Opaque and shadowed, or the fields would show
+ * through as they scroll under it. */
+.form-actions-sticky {
+	position: sticky;
+	bottom: 0;
+	z-index: 1;
+	margin-top: var(--space-2);
+	padding-bottom: var(--space-4);
+	background-color: var(--color-surface);
+	box-shadow: var(--shadow-sm);
+}
+
+/* ---------------------------------------------------------------------------
+ * Message strip
+ * -------------------------------------------------------------------------*/
+
+/* A tinted block with a 4px bar down its leading edge. The bar is what makes
+ * the four states tell apart in greyscale — the tints are close in lightness by
+ * design, so that they stay quiet — together with the bold prefix the component
+ * renders as real text. */
+.form-message-strip {
+	padding: var(--space-3) var(--space-4);
+	border-radius: var(--radius-sm);
+	border-left: 4px solid;
+	font-size: var(--text-md);
+}
+
+.form-message-strip-prefix {
+	font-weight: var(--weight-bold);
+}
+
+.form-message-strip-error {
+	color: var(--color-danger);
+	background-color: var(--color-danger-soft);
+	border-left-color: var(--color-danger-border);
+}
+
+.form-message-strip-warning {
+	color: var(--color-warning);
+	background-color: var(--color-warning-soft);
+	border-left-color: var(--color-warning-border);
+}
+
+.form-message-strip-success {
+	color: var(--color-success);
+	background-color: var(--color-success-soft);
+	border-left-color: var(--color-success-border);
+}
+
+.form-message-strip-information {
+	color: var(--color-info);
+	background-color: var(--color-info-soft);
+	border-left-color: var(--color-info-border);
+}
+
+/* ---------------------------------------------------------------------------
+ * Forced colours (Windows high contrast)
+ * -------------------------------------------------------------------------*/
+
+/* In forced-colours mode the OS replaces every colour, so the fill-and-line
+ * system this file is built on disappears — and with it the difference between
+ * an editable field and the page. Real borders are put back so the controls are
+ * still boxes, and the state lines become the system's own highlight colour. */
+@media (forced-colors: active) {
+	.form-control,
+	.form-control-shell,
+	.form-switch-track {
+		border: 1px solid ButtonBorder;
+	}
+
+	.form-field-error .form-control,
+	.form-field-error .form-control-shell {
+		border-width: 2px;
+	}
+
+	.form-checkbox:checked,
+	.form-radio:checked,
+	.form-switch-input:checked + .form-switch-track {
+		background-color: Highlight;
+		border-color: Highlight;
+	}
+
+	.form-switch-input:checked + .form-switch-track .form-switch-knob {
+		background-color: HighlightText;
+	}
+
+	/* opacity is not a colour, so it survives forced-colours and would leave a
+	 * disabled control unreadable. GrayText is the system's own answer. */
+	.form-field-disabled,
+	.form-button:disabled {
+		opacity: 1;
+		color: GrayText;
+	}
+}

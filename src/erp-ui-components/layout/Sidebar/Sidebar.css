@@ -64,7 +64,31 @@
 
 	display: flex;
 	flex-direction: column;
+
+	/* Pinned to the top of the viewport, so the rail stays put while the work
+	 * scrolls past it. Without this the rail is just a tall element in normal
+	 * flow: the page scrolls as one piece and the navigation leaves the screen
+	 * on any form longer than the viewport.
+	 *
+	 * Sticky rather than fixed. Fixed would take the rail out of flow, and the
+	 * layout depends on it being in flow — .layout-content takes the width the
+	 * rail is not using, which is what makes opening the rail push the content
+	 * across instead of covering it. Sticky keeps that and only changes where
+	 * the rail paints.
+	 *
+	 * This works because the rail is exactly as tall as the viewport and
+	 * .layout is at least that tall: a sticky element cannot travel past its
+	 * containing block, so the rail is held at top: 0 for the whole scroll. */
+	position: sticky;
+	top: 0;
+
+	/* 100vh first for browsers without dvh, then the real value. On mobile,
+	 * 100vh is the height with the URL bar *hidden*, so a 100vh rail hangs
+	 * below the fold until you scroll — and a pinned element that is taller
+	 * than the screen cannot be scrolled to the end of. dvh is the viewport as
+	 * it actually is. */
 	height: 100vh;
+	height: 100dvh;
 
 	/* The one exception: this edge divides the rail from the page behind it,
 	 * so it belongs to the app's border token, not to the rail's own shades. */
@@ -349,16 +373,21 @@
 	outline-offset: -2px;
 }
 
-/* NavLink adds .active to the row matching the current route. Marked three
- * ways at once — a deeper shade, the bar and heavier text — so it is
+/* NavLink adds .active to the row matching the current route. Marked four ways
+ * at once — a deeper shade, the bar, heavier text and the brand blue — so it is
  * unmistakable next to a merely hovered row, and still obvious to anyone who
  * cannot separate the two greys.
+ *
+ * Blue because that is what "current" looks like in a Fiori shell, and because
+ * on white chrome a grey-on-grey selection has very little room to read. The
+ * exact blue is --color-chrome-active, which is the darkest of the three so it
+ * still clears 4.5:1 against the shade behind it; see index.css.
  *
  * The bar takes currentColor, set on the line above, so it is always the same
  * as this row's text and never needs its own theme value. */
 .sidebar-submenu-item a.active {
 	background-color: var(--sidebar-shade-selected);
-	color: var(--color-text);
+	color: var(--color-chrome-active);
 	border-left-color: currentColor;
 	font-weight: var(--weight-semibold);
 }

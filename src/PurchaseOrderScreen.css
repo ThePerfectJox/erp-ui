@@ -1,0 +1,60 @@
+/* Demo screen chrome — the page title block and the white card the form sits
+ * in. Not part of the component library; this is what an application screen
+ * would provide around a <Form>.
+ *
+ * The card is what makes the Fiori surface order visible: grey page, white
+ * card, grey fields. A form dropped straight onto the page background would put
+ * grey fields on a grey canvas and lose the fill cue entirely. */
+
+.po-screen {
+	display: flex;
+	flex-direction: column;
+	row-gap: var(--space-4);
+
+	/* Business screens are read, not scanned, and a form line 1800px wide is
+	 * genuinely harder to fill in than one at 1100. */
+	max-width: 72rem;
+}
+
+.po-header {
+	display: flex;
+	flex-direction: column;
+	row-gap: var(--space-1);
+}
+
+/* The breadcrumb-ish line above the title. Uppercase and tracked out so it
+ * reads as a category rather than as part of the heading. */
+.po-eyebrow {
+	margin: 0;
+	color: var(--color-text-muted);
+	font-size: var(--text-xs);
+	font-weight: var(--weight-semibold);
+	letter-spacing: var(--tracking-wide);
+	text-transform: uppercase;
+}
+
+.po-title {
+	margin: 0;
+}
+
+.po-subtitle {
+	margin: 0;
+	color: var(--color-text-muted);
+	font-size: var(--text-sm);
+}
+
+.po-card {
+	display: flex;
+	flex-direction: column;
+	row-gap: var(--space-5);
+	padding: var(--space-5);
+	background-color: var(--color-surface);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-sm);
+}
+
+@media (max-width: 767px) {
+	.po-card {
+		padding: var(--space-4);
+	}
+}

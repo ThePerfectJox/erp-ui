@@ -1,7 +1,12 @@
-import './App.css'
 import Layout from './erp-ui-components/layout/Layout'
+import PurchaseOrderScreen from './PurchaseOrderScreen'
 
 function App() {
-	return <Layout />
+	return (
+		<Layout>
+			<PurchaseOrderScreen />
+		</Layout>
+	)
 }
+
 export default App

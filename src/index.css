@@ -1,81 +1,183 @@
+/* =============================================================================
+ * Design tokens — SAP Fiori "Morning Horizon"
+ * =============================================================================
+ *
+ * The values below are taken from SAP's own theming base content for the
+ * `sap_horizon` theme, so the app reads as a Fiori application rather than as
+ * a generic admin template. Where SAP derives a token with a LESS function
+ * (`darken`, `lighten`, `mix`) the result has been resolved to a literal hex
+ * and the derivation left in a comment, so anyone can check the arithmetic.
+ *
+ * Source: github.com/SAP/theming-base-content
+ *         content/Base/baseLib/sap_horizon/base.less
+ *
+ * The SAP token name is given after each value. Our names stay generic
+ * (--color-primary, not --sapBrandColor) so the palette can be swapped for a
+ * non-SAP one without renaming anything downstream.
+ *
+ * -----------------------------------------------------------------------------
+ * Why Fiori looks the way it does
+ * -----------------------------------------------------------------------------
+ * Three rules do most of the work, and the rest of this file just supplies the
+ * values they need:
+ *
+ * 1. ONE blue means "you can act on this". Links, the focus ring, the standard
+ *    button's label, the field underline on hover — all the same #0070f2
+ *    family. Nothing decorative is ever blue, so blue always means the same
+ *    thing and there is exactly one thing to learn.
+ *
+ * 2. Fields are FILLED, not outlined. An editable field is a grey box with a
+ *    single darker line under it; the page behind it is a lighter grey and
+ *    cards are white. So "where can I type" is answered by fill, at a glance,
+ *    without reading any labels. Read-only swaps the solid underline for a
+ *    dashed one and drops the fill — the difference survives greyscale and
+ *    colour blindness.
+ *
+ * 3. State is never colour alone. An invalid field gets a 2px underline, a
+ *    tinted fill AND a message; a required field gets an asterisk. WCAG 1.4.1,
+ *    and it is also just faster to scan.
+ * ---------------------------------------------------------------------------*/
+
 :root {
 	color-scheme: light;
-	--color-primary:            #1a1a1a;
-	--color-primary-hover:      #333333;
-	--color-primary-active:     #000000;
 
-	--color-primary-soft:       #e3e3e3;
-	--color-primary-soft-hover: #d6d6d6;
-	--color-primary-muted:      #b0b0b0;   /* disabled brand                    */
-	--color-on-primary:         #ffffff;
+	/* --- Brand / interaction --------------------------------------------------
+	 * --color-primary is the one blue described above. --color-primary-hover is
+	 * also SAP's link colour, which is why links and hovered controls match. */
+	--color-primary:            #0070f2;   /* sapBrandColor                     */
+	--color-primary-hover:      #0064d9;   /* sapHighlightColor  darken(brand 5) */
+	--color-primary-active:     #0058bf;   /*                    darken(brand 10)*/
 
-	--color-secondary:          #3d3d3d;   /* graphite — secondary actions      */
-	--color-secondary-hover:    #262626;
-	--color-secondary-soft:     #f0f0f0;
+	--color-primary-soft:       #e1f4ff;   /* sapInformationBackground          */
+	--color-primary-soft-hover: #cfe9ff;   /* selected + hovered                */
+	--color-primary-muted:      #80b8f8;   /* disabled brand — brand on white   */
+	--color-on-primary:         #ffffff;   /* sapButton_Emphasized_TextColor    */
+
+	/* --- Secondary: the neutral slate ----------------------------------------
+	 * Fiori's "secondary action" is not a second colour — it is the standard
+	 * button: white, grey border, blue label. This family is for the quiet
+	 * non-interactive furniture instead (neutral badges, counts, meta rows). */
+	--color-secondary:          #5b738b;   /* sapAccentColor10                  */
+	--color-secondary-hover:    #46596d;
+	--color-secondary-soft:     #eff1f2;   /* sapNeutralBackground              */
 	--color-on-secondary:       #ffffff;
 
-	--color-tertiary:           #6d28d9;   /* violet — charts, badges, accents  */
-	--color-tertiary-hover:     #5b21b6;
-	--color-tertiary-soft:      #f0e9fd;
+	/* --- Tertiary: accents, charts, badges ----------------------------------- */
+	--color-tertiary:           #6c32a9;   /* sapAccentColor9                   */
+	--color-tertiary-hover:     #56287f;
+	--color-tertiary-soft:      #f2e5ff;
 	--color-on-tertiary:        #ffffff;
 
-	/* --- Semantic status ---------------------------------------------------- */
-	--color-success:            #15803d;
-	--color-success-soft:       #e6f5eb;
-	--color-warning:            #b45309;
-	--color-warning-soft:       #fdf0dc;
-	--color-danger:             #dc2626;
-	--color-danger-hover:       #b91c1c;
-	--color-danger-soft:        #fdeaea;
-	--color-info:               #1d4ed8;
-	--color-info-soft:          #e7edfd;
+	/* --- Semantic status -----------------------------------------------------
+	 * Five states, and Fiori is deliberate about the pairs: the *text* colour
+	 * is dark enough to read on white, while the *element* colour is the
+	 * brighter one used for borders and icons where contrast is carried by
+	 * size rather than by weight. Keeping both means a message never has to
+	 * choose between being legible and being visible.
+	 *
+	 * Note the error tint is pink, not peach. Fiori keeps red for the line and
+	 * the text and lets the fill stay cool, so an invalid field does not read
+	 * as a warning at a glance. */
+	--color-success:            #256f3a;   /* sapPositiveColor                  */
+	--color-success-border:     #2b7d42;   /* sapPositiveElementColor           */
+	--color-success-soft:       #f5fae5;   /* sapSuccessBackground              */
 
-	/* --- Surfaces ----------------------------------------------------------- */
-	--color-bg:                 #f7f7f7;   /* app canvas — grey, so white cards */
-	--color-surface:            #ffffff;   /* and the white chrome both read    */
-	--color-surface-alt:        #fafafa;   /* zebra rows, hover on light        */
-	--color-surface-sunken:     #f0f0f0;   /* wells, table headers, inset areas */
+	--color-warning:            #b44f00;   /* sapCriticalTextColor  darken(10)  */
+	--color-warning-border:     #dd6100;   /* sapWarningBorderColor darken(2)   */
+	--color-warning-soft:       #fff8d6;   /* sapWarningBackground              */
 
-	/* --- Text ---------------------------------------------------------------- */
-	--color-text:               #171717;   /* primary copy — graphite, not black */
-	--color-text-muted:         #5c5c5c;   /* secondary copy, labels            */
-	--color-text-subtle:        #707070;   /* captions, placeholders            */
-	--color-text-inverse:       #fafafa;   /* copy on filled buttons            */
-	--color-link:               var(--color-primary);
+	--color-danger:             #aa0808;   /* sapNegativeColor                  */
+	--color-danger-hover:       #8f0606;
+	--color-danger-border:      #e90b0b;   /* sapErrorBorderColor  lighten(13)  */
+	--color-danger-soft:        #ffeaf4;   /* sapErrorBackground                */
 
-	/* --- Lines & focus ------------------------------------------------------- */
-	--color-border:             #e5e5e5;   /* default hairline                  */
-	--color-border-strong:      #cccccc;   /* dividers and inputs that must read */
-	--color-focus-ring:         rgba(23, 23, 23, 0.25);
+	--color-info:               #0064d9;   /* sapInformativeTextColor darken(5) */
+	--color-info-border:        #0070f2;   /* sapInformativeColor               */
+	--color-info-soft:          #e1f4ff;   /* sapInformationBackground          */
+
+	--color-neutral:            #788fa6;   /* sapNeutralColor                   */
+	--color-neutral-soft:       #eff1f2;   /* sapNeutralBackground              */
+
+	/* --- Surfaces ------------------------------------------------------------
+	 * Four tones, and the order matters — it is what rule 2 above trades on:
+	 *
+	 *   surface        #ffffff   cards, dialogs, tables      lightest
+	 *   bg             #f5f6f7   the canvas behind cards
+	 *   surface-sunken #eff1f2   editable fields, wells      darkest
+	 *
+	 * So a field is always darker than the card it sits on, which is always
+	 * lighter than the page. Never reorder these. */
+	--color-bg:                 #f5f6f7;   /* sapBackgroundColor                */
+	--color-surface:            #ffffff;   /* sapBaseColor                      */
+	--color-surface-alt:        #f5f6f7;   /* zebra rows inside a white card    */
+	--color-surface-sunken:     #eff1f2;   /* sapField_Background  darken(bg 2) */
+
+	/* --- Text ----------------------------------------------------------------
+	 * Three weights of grey, far enough apart to be read as a hierarchy:
+	 * near-black content, a mid slate for labels, a light slate for hints. */
+	--color-text:               #131e29;   /* sapTextColor / sapPrimary6        */
+	--color-text-muted:         #556b82;   /* sapContent_LabelColor             */
+	--color-text-subtle:        #758ca4;   /* sapPrimary5 — hints, placeholders */
+	--color-text-inverse:       #ffffff;   /* sapContent_ContrastTextColor      */
+	--color-link:               var(--color-primary-hover);
+
+	/* --- Lines & focus -------------------------------------------------------
+	 * --color-field-border is much darker than the other two on purpose: it is
+	 * the underline that marks a field as editable, so it has to carry on its
+	 * own. --color-focus-ring is SAP's focus navy, darker than the brand blue
+	 * so a focused control still reads as focused while it is also hovered. */
+	--color-border:             #e5e5e5;   /* hairlines, table rows             */
+	--color-border-strong:      #bcc3ca;   /* sapButton_BorderColor darken(20)  */
+	--color-field-border:       #556b81;   /* sapField_BorderColor  darken(13)  */
+	--color-divider:            #a8b3bd;   /* sapGroup_TitleBorderColor         */
+	--color-focus-ring:         #0032a5;   /* sapContent_FocusColor             */
+
+	/* The required-field asterisk. Magenta, not red — SAP keeps red for things
+	 * that are actually wrong, so a form full of required fields does not look
+	 * like a form full of errors before it has been touched. */
+	--color-required:           #ba066c;   /* sapField_RequiredColor            */
 
 	/* --- App chrome (header / sidebar / footer) ------------------------------
-	 * Light chrome: the frame is white and the canvas behind the work is grey,
-	 * so the two separate on tone rather than on a heavy dark block. That puts
-	 * the burden on --color-chrome-border to do real work; it is deliberately
-	 * a step stronger than a hairline. */
-	--color-chrome-bg:          #ffffff;   /* sidebar                           */
-	--color-chrome-bg-elevated: #ffffff;   /* header / footer                   */
-	--color-chrome-fg:          #1a1a1a;   /* nav labels                        */
-	--color-chrome-fg-muted:    #707070;   /* group headings, footer text       */
-	--color-chrome-hover:       #f2f2f2;   /* row hover on light chrome         */
-	--color-chrome-active:      #1a1a1a;   /* selected-row accent bar           */
-	--color-chrome-border:      #e5e5e5;   /* dividers on light chrome          */
+	 * Horizon's shell is white — sapShellColor resolves to sapBaseColor — so
+	 * the frame is white, the canvas behind the work is grey, and the two
+	 * separate on tone rather than on a dark block. That puts real weight on
+	 * --color-chrome-border, which is why it is a step stronger than a
+	 * hairline, and it is why the selected nav row is marked in brand blue:
+	 * on white chrome a grey selection would not read. */
+	--color-chrome-bg:          #ffffff;   /* sapShell_Navigation_Background     */
+	--color-chrome-bg-elevated: #ffffff;   /* sapShellColor — header / footer    */
+	--color-chrome-fg:          #131e29;   /* sapShell_TextColor                 */
+	--color-chrome-fg-muted:    #556b82;   /* group headings, footer text        */
+	--color-chrome-hover:       #eaecee;   /* sapHoverColor  darken(bg 4)        */
+	--color-chrome-border:      #d9d9d9;   /* dividers on light chrome           */
 
-	/* --- Elevation ----------------------------------------------------------- */
-	/* Layered rather than one blur: a tight contact shadow plus a wide soft one
-	 * is what reads as "lifted" instead of "outlined". */
-	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
-	--shadow-md: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.05);
-	--shadow-lg: 0 2px 8px rgba(0, 0, 0, 0.08), 0 16px 40px rgba(0, 0, 0, 0.16);
+	/* The selected nav row. The darkest of the three blues, not the brand one,
+	 * and the reason is contrast: the sidebar marks a selected row by darkening
+	 * the rail behind it, and against its darkest state (white at 16% black,
+	 * #d6d6d6) the brand blue reaches only 3.6:1 while this reaches 4.59:1.
+	 * The row's label is 13px semibold, which does not qualify as large text,
+	 * so 4.5:1 is the bar it has to clear. */
+	--color-chrome-active:      #0058bf;
 
-	/* --- Radius --------------------------------------------------------------- */
-	/* Tight on purpose. Dense business screens read as toys once corners round. */
-	--radius-sm:   5px;
-	--radius-md:   8px;
-	--radius-lg:   12px;
+	/* --- Elevation -----------------------------------------------------------
+	 * SAP tints its shadows with #223548 rather than pure black, so a lifted
+	 * surface reads as cool grey instead of muddy. Shadow 1 and 2 lead with a
+	 * hairline ring (`0 0 0 1px`) because a popover over a white card has no
+	 * tonal edge of its own to sit on. */
+	--shadow-sm: 0 0 0.125rem 0 rgba(34, 53, 72, 0.2), 0 0.125rem 0.25rem 0 rgba(34, 53, 72, 0.2);
+	--shadow-md: 0 0 0 0.0625rem rgba(34, 53, 72, 0.15), 0 0.125rem 0.5rem 0 rgba(34, 53, 72, 0.3);
+	--shadow-lg: 0 0 0 0.0625rem rgba(34, 53, 72, 0.15), 0 0.625rem 1.875rem 0 rgba(34, 53, 72, 0.25);
+
+	/* --- Radius --------------------------------------------------------------
+	 * Fields are tighter than buttons in Fiori (4px against 8px), which is a
+	 * second, quiet signal of what is a box you fill in versus a thing you
+	 * press. Dense business screens read as toys once corners round further. */
+	--radius-sm:   0.25rem;   /* sapField_BorderCornerRadius   — 4px            */
+	--radius-md:   0.5rem;    /* sapButton_BorderCornerRadius  — 8px            */
+	--radius-lg:   0.75rem;   /* cards and tiles               — 12px           */
 	--radius-pill: 999px;
 
-	/* --- Spacing (4px base) ---------------------------------------------------- */
+	/* --- Spacing (4px base) --------------------------------------------------- */
 	--space-1: 0.25rem;
 	--space-2: 0.5rem;
 	--space-3: 0.75rem;
@@ -84,17 +186,22 @@
 	--space-6: 2rem;
 	--space-8: 3rem;
 
-	/* --- Typography ------------------------------------------------------------ */
-	--font-sans: Arial, sans-serif;
-	--font-mono: "SFMono-Regular", ui-monospace, "Cascadia Code", Consolas, monospace;
+	/* --- Typography ----------------------------------------------------------
+	 * "72" is SAP's own typeface and is not redistributable, so it is named
+	 * first and Arial catches everyone who does not have it. SAP's own stack
+	 * falls back the same way, and the metrics are close enough that the
+	 * layout does not move. */
+	--font-sans: "72", "72full", Arial, Helvetica, sans-serif;   /* sapFontFamily */
+	--font-mono: "72Mono", "72Monofull", "SFMono-Regular", ui-monospace, Consolas, monospace;
 
-	/* Base is 14px, not 16px — the density business software is read at. */
+	/* Base is 14px, not 16px — sapFontSize, and the density business software
+	 * is read at. */
 	--text-xs:  0.6875rem;
-	--text-sm:  0.8125rem;
-	--text-md:  0.875rem;
+	--text-sm:  0.75rem;
+	--text-md:  0.875rem;   /* sapFontSize                                     */
 	--text-lg:  1rem;
-	--text-xl:  1.25rem;
-	--text-2xl: 1.5rem;
+	--text-xl:  1.125rem;
+	--text-2xl: 1.375rem;
 
 	--weight-normal:   400;
 	--weight-medium:   500;
@@ -102,13 +209,30 @@
 	--weight-bold:     700;
 
 	--leading-tight:  1.25;
-	--leading-normal: 1.55;
+	--leading-normal: 1.5;   /* sapContent_LineHeight                          */
 
 	/* Headings tighten as they grow; small caps-y labels open up. */
 	--tracking-tight: -0.011em;
 	--tracking-wide:  0.06em;
 
-	/* --- Motion ----------------------------------------------------------------- */
+	/* --- Control metrics -----------------------------------------------------
+	 * SAP ships two densities. Cozy (36px) is the default and is what a form
+	 * on a normal screen uses; compact (26px) is for tables and for screens
+	 * that have to show a lot at once. Both are here so a table and a form can
+	 * disagree about density without either hard-coding a pixel value. */
+	--control-height:         2.25rem;    /* cozy     — 36px                    */
+	--control-height-compact: 1.625rem;   /* compact  — 26px, sapElement_Compact */
+	--control-padding-x:      0.625rem;
+
+	/* Width of the label column when a form puts labels beside its fields. One
+	 * value, so every section on a screen lines up on the same gutter.
+	 *
+	 * 10rem is about eighteen characters at the label size, which covers most
+	 * field names before they wrap, and still leaves a usable control width
+	 * when two fields share a row. */
+	--form-label-width:       10rem;
+
+	/* --- Motion ---------------------------------------------------------------- */
 	--transition-fast: 120ms ease;
 	--transition:      200ms ease;
 }
@@ -116,6 +240,7 @@
 /* -----------------------------------------------------------------------------
  * Base document styles
  * ---------------------------------------------------------------------------*/
+
 *,
 *::before,
 *::after {
@@ -141,46 +266,56 @@ body {
 
 /* --- Headings: bold and tight, so hierarchy reads without per-screen rules --- */
 h1, h2, h3, h4, h5, h6 {
+	margin-top: 0;
 	color: var(--color-text);
-	font-weight: var(--weight-semibold);
+	font-weight: var(--weight-bold);
 	line-height: var(--leading-tight);
 	letter-spacing: var(--tracking-tight);
 }
 
-h1 { font-size: var(--text-2xl); font-weight: var(--weight-bold); }
+h1 { font-size: var(--text-2xl); }
 h2 { font-size: var(--text-xl); }
 h3 { font-size: var(--text-lg); }
 h4, h5, h6 { font-size: var(--text-md); }
 
-/* Underlined at rest, not on hover. With no brand hue a link is the same
- * graphite as the prose around it, so the underline is the only thing marking
- * it as a link — WCAG 1.4.1, and just as importantly, findable. */
+/* Links carry the interaction blue and no underline at rest — the colour is
+ * doing the marking, and in Fiori that colour means one thing everywhere.
+ * The underline arrives on hover and focus so the affordance is still
+ * confirmed by something other than hue. */
 a {
 	color: var(--color-link);
-	text-decoration: underline;
+	text-decoration: none;
 	text-underline-offset: 2px;
-	text-decoration-thickness: 1px;
-	font-weight: var(--weight-medium);
+	font-weight: var(--weight-normal);
 }
 
-a:hover {
-	text-decoration-thickness: 2px;
+a:hover,
+a:focus-visible {
+	text-decoration: underline;
+	text-decoration-thickness: 1px;
 }
 
 /* --- Buttons -----------------------------------------------------------------
- * A baseline so a bare <button> — a modal's Cancel/Confirm, say — is already a
- * house button rather than an OS one. Module rules like .form-submit-button are
- * class selectors, so they outrank this wherever the two disagree. */
+ * A baseline only, so a bare <button> — a modal's Cancel, say — is already a
+ * house button rather than an OS one. The full variant set lives on the
+ * <Button> component in erp-ui-components/form; this rule is what that
+ * component's classes override.
+ *
+ * The standard Fiori button is white with a grey border and a BLUE label. That
+ * is the whole trick behind "clean but easy to tell apart": a screen can carry
+ * a dozen of these without a single filled block on it, and the one filled
+ * blue button on the screen is unmistakably the thing to press. */
 button {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	gap: var(--space-2);
-	padding: 0.5rem 1rem;
+	min-height: var(--control-height);
+	padding: 0 var(--space-3);
 	font: inherit;
 	font-size: var(--text-md);
 	font-weight: var(--weight-semibold);
-	color: var(--color-text);
+	color: var(--color-primary-hover);
 	background: var(--color-surface);
 	border: 1px solid var(--color-border-strong);
 	border-radius: var(--radius-md);
@@ -189,61 +324,40 @@ button {
 }
 
 button:hover {
-	background: var(--color-surface-alt);
-	border-color: var(--color-text-subtle);
+	background: var(--color-chrome-hover);
 }
 
-button:disabled {
+button:active {
+	background: var(--color-primary-soft);
+	border-color: var(--color-primary-hover);
+}
+
+/* `:not(.form-button)` matters. A pseudo-class pushes this rule to the same
+ * specificity as the component's single-class variant rules and the later of the
+ * two then wins on every property this sets — so a disabled *emphasized* button
+ * would take the grey-on-white below instead of a faded blue. The <Button>
+ * component owns its own disabled state; this is only for a bare <button>. */
+button:disabled:not(.form-button) {
 	color: var(--color-text-subtle);
-	background: var(--color-surface-sunken);
+	background: var(--color-surface);
 	border-color: var(--color-border);
 	cursor: not-allowed;
 }
 
-/* Variants. The default button above is the quiet one; these two are the only
- * filled buttons in the system, so on any given screen the affirmative action
- * and the destructive one each stand alone and can't be mistaken for the
- * other — or for the row of neutral buttons around them. */
-button.button-primary {
-	color: var(--color-on-primary);
-	background: var(--color-primary);
-	border-color: var(--color-primary);
-	box-shadow: var(--shadow-sm);
-}
-
-button.button-primary:hover {
-	background: var(--color-primary-hover);
-	border-color: var(--color-primary-hover);
-}
-
-button.button-primary:active {
-	background: var(--color-primary-active);
-	border-color: var(--color-primary-active);
-}
-
-button.button-danger {
-	color: var(--color-on-primary);
-	background: var(--color-danger);
-	border-color: var(--color-danger);
-	box-shadow: var(--shadow-sm);
-}
-
-button.button-danger:hover,
-button.button-danger:active {
-	background: var(--color-danger-hover);
-	border-color: var(--color-danger-hover);
-}
-
-button.button-primary:disabled {
-	background: var(--color-primary-muted);
-	border-color: var(--color-primary-muted);
-	color: var(--color-on-primary);
-	box-shadow: none;
-}
-
-/* A solid 2px graphite ring, not a translucent halo. On a monochrome page a
- * soft glow disappears; a hard dark edge does not. */
+/* A solid 2px navy ring, darker than the brand blue so a control that is
+ * focused *and* hovered still reads as focused. */
 :focus-visible {
-	outline: 2px solid var(--color-primary);
+	outline: 2px solid var(--color-focus-ring);
 	outline-offset: 2px;
+}
+
+/* Honour a reduced-motion preference globally rather than per component. */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
 }
