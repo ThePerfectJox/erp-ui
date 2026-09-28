@@ -1,0 +1,279 @@
+/* =============================================================================
+ * Design tokens — SAP Fiori "Morning Horizon"
+ * =============================================================================
+ *
+ * Values, and nothing else. No selectors beyond `:root`, no element styling, no
+ * component rules. That separation is what makes this file swappable: to retheme
+ * the whole library, replace this one file and leave everything else alone.
+ *
+ * The values are taken from SAP's own theming base content for the `sap_horizon`
+ * theme, so the app reads as a Fiori application rather than as a generic admin
+ * template. Where SAP derives a token with a LESS function (`darken`, `lighten`,
+ * `mix`) the result has been resolved to a literal hex and the derivation left in
+ * a comment, so anyone can check the arithmetic.
+ *
+ * Source: github.com/SAP/theming-base-content
+ *         content/Base/baseLib/sap_horizon/base.less
+ *
+ * The SAP token name is given after each value. Our names stay generic
+ * (--color-primary, not --sapBrandColor) so the palette can be swapped for a
+ * non-SAP one without renaming anything downstream.
+ *
+ * -----------------------------------------------------------------------------
+ * Why Fiori looks the way it does
+ * -----------------------------------------------------------------------------
+ * Three rules do most of the work, and the rest of this file just supplies the
+ * values they need:
+ *
+ * 1. ONE blue means "you can act on this". Links, the focus ring, the standard
+ *    button's label, the field underline on hover — all the same #0070f2
+ *    family. Nothing decorative is ever blue, so blue always means the same
+ *    thing and there is exactly one thing to learn.
+ *
+ * 2. Fields are FILLED, not outlined. An editable field is a grey box with a
+ *    single darker line under it; the page behind it is a lighter grey and
+ *    cards are white. So "where can I type" is answered by fill, at a glance,
+ *    without reading any labels. Read-only swaps the solid underline for a
+ *    dashed one and drops the fill — the difference survives greyscale and
+ *    colour blindness.
+ *
+ * 3. State is never colour alone. An invalid field gets a 2px underline, a
+ *    tinted fill AND a message; a required field gets an asterisk. WCAG 1.4.1,
+ *    and it is also just faster to scan.
+ * ---------------------------------------------------------------------------*/
+
+:root {
+	color-scheme: light;
+
+	/* --- Brand / interaction --------------------------------------------------
+	 * --color-primary is the one blue described above. --color-primary-hover is
+	 * also SAP's link colour, which is why links and hovered controls match. */
+	--color-primary:            #0070f2;   /* sapBrandColor                     */
+	--color-primary-hover:      #0064d9;   /* sapHighlightColor  darken(brand 5) */
+	--color-primary-active:     #0058bf;   /*                    darken(brand 10)*/
+
+	--color-primary-soft:       #e1f4ff;   /* sapInformationBackground          */
+	--color-primary-soft-hover: #cfe9ff;   /* selected + hovered                */
+	--color-primary-muted:      #80b8f8;   /* disabled brand — brand on white   */
+	--color-on-primary:         #ffffff;   /* sapButton_Emphasized_TextColor    */
+
+	/* --- Secondary: the neutral slate ----------------------------------------
+	 * Fiori's "secondary action" is not a second colour — it is the standard
+	 * button: white, grey border, blue label. This family is for the quiet
+	 * non-interactive furniture instead (neutral badges, counts, meta rows). */
+	--color-secondary:          #5b738b;   /* sapAccentColor10                  */
+	--color-secondary-hover:    #46596d;
+	--color-secondary-soft:     #eff1f2;   /* sapNeutralBackground              */
+	--color-on-secondary:       #ffffff;
+
+	/* --- Tertiary: accents, charts, badges ----------------------------------- */
+	--color-tertiary:           #6c32a9;   /* sapAccentColor9                   */
+	--color-tertiary-hover:     #56287f;
+	--color-tertiary-soft:      #f2e5ff;
+	--color-on-tertiary:        #ffffff;
+
+	/* --- Semantic status -----------------------------------------------------
+	 * Five states, and Fiori is deliberate about the pairs: the *text* colour
+	 * is dark enough to read on white, while the *element* colour is the
+	 * brighter one used for borders and icons where contrast is carried by
+	 * size rather than by weight. Keeping both means a message never has to
+	 * choose between being legible and being visible.
+	 *
+	 * Note the error tint is pink, not peach. Fiori keeps red for the line and
+	 * the text and lets the fill stay cool, so an invalid field does not read
+	 * as a warning at a glance. */
+	--color-success:            #256f3a;   /* sapPositiveColor                  */
+	--color-success-border:     #2b7d42;   /* sapPositiveElementColor           */
+	--color-success-soft:       #f5fae5;   /* sapSuccessBackground              */
+
+	--color-warning:            #b44f00;   /* sapCriticalTextColor  darken(10)  */
+	--color-warning-border:     #dd6100;   /* sapWarningBorderColor darken(2)   */
+	--color-warning-soft:       #fff8d6;   /* sapWarningBackground              */
+
+	--color-danger:             #aa0808;   /* sapNegativeColor                  */
+	--color-danger-hover:       #8f0606;
+	--color-danger-border:      #e90b0b;   /* sapErrorBorderColor  lighten(13)  */
+	--color-danger-soft:        #ffeaf4;   /* sapErrorBackground                */
+
+	--color-info:               #0064d9;   /* sapInformativeTextColor darken(5) */
+	--color-info-border:        #0070f2;   /* sapInformativeColor               */
+	--color-info-soft:          #e1f4ff;   /* sapInformationBackground          */
+
+	--color-neutral:            #788fa6;   /* sapNeutralColor                   */
+	--color-neutral-soft:       #eff1f2;   /* sapNeutralBackground              */
+
+	/* --- Surfaces ------------------------------------------------------------
+	 * Four tones, and the order matters — it is what rule 2 above trades on:
+	 *
+	 *   surface        #ffffff   cards, dialogs, tables      lightest
+	 *   bg             #f5f6f7   the canvas behind cards
+	 *   surface-sunken #eff1f2   editable fields, wells      darkest
+	 *
+	 * So a field is always darker than the card it sits on, which is always
+	 * lighter than the page. Never reorder these. */
+	--color-bg:                 #f5f6f7;   /* sapBackgroundColor                */
+	--color-surface:            #ffffff;   /* sapBaseColor                      */
+	--color-surface-alt:        #f5f6f7;   /* zebra rows inside a white card    */
+	--color-surface-sunken:     #eff1f2;   /* sapField_Background  darken(bg 2) */
+
+	/* --- Text ----------------------------------------------------------------
+	 * Three weights of grey, far enough apart to be read as a hierarchy:
+	 * near-black content, a mid slate for labels, a light slate for hints. */
+	--color-text:               #131e29;   /* sapTextColor / sapPrimary6        */
+	--color-text-muted:         #556b82;   /* sapContent_LabelColor             */
+	--color-text-subtle:        #758ca4;   /* sapPrimary5 — hints, placeholders */
+	--color-text-inverse:       #ffffff;   /* sapContent_ContrastTextColor      */
+	--color-link:               var(--color-primary-hover);
+
+	/* --- Lines & focus -------------------------------------------------------
+	 * --color-field-border is much darker than the other two on purpose: it is
+	 * the underline that marks a field as editable, so it has to carry on its
+	 * own. --color-focus-ring is SAP's focus navy, darker than the brand blue
+	 * so a focused control still reads as focused while it is also hovered. */
+	--color-border:             #e5e5e5;   /* hairlines, table rows             */
+	--color-border-strong:      #bcc3ca;   /* sapButton_BorderColor darken(20)  */
+	--color-field-border:       #556b81;   /* sapField_BorderColor  darken(13)  */
+	--color-divider:            #a8b3bd;   /* sapGroup_TitleBorderColor         */
+	--color-focus-ring:         #0032a5;   /* sapContent_FocusColor             */
+
+	/* The required-field asterisk. Magenta, not red — SAP keeps red for things
+	 * that are actually wrong, so a form full of required fields does not look
+	 * like a form full of errors before it has been touched. */
+	--color-required:           #ba066c;   /* sapField_RequiredColor            */
+
+	/* --- App chrome (header / sidebar / footer) ------------------------------
+	 * Horizon's shell is white — sapShellColor resolves to sapBaseColor — so
+	 * the frame is white, the canvas behind the work is grey, and the two
+	 * separate on tone rather than on a dark block. That puts real weight on
+	 * --color-chrome-border, which is why it is a step stronger than a
+	 * hairline, and it is why the selected nav row is marked in brand blue:
+	 * on white chrome a grey selection would not read. */
+	--color-chrome-bg:          #ffffff;   /* sapShell_Navigation_Background     */
+	--color-chrome-bg-elevated: #ffffff;   /* sapShellColor — header / footer    */
+	--color-chrome-fg:          #131e29;   /* sapShell_TextColor                 */
+	--color-chrome-fg-muted:    #556b82;   /* group headings, footer text        */
+	--color-chrome-hover:       #eaecee;   /* sapHoverColor  darken(bg 4)        */
+	--color-chrome-border:      #d9d9d9;   /* dividers on light chrome           */
+
+	/* The selected nav row. The darkest of the three blues, not the brand one,
+	 * and the reason is contrast: the sidebar marks a selected row by darkening
+	 * the rail behind it, and against its darkest state (white at 16% black,
+	 * #d6d6d6) the brand blue reaches only 3.6:1 while this reaches 4.59:1.
+	 * The row's label is 13px semibold, which does not qualify as large text,
+	 * so 4.5:1 is the bar it has to clear. */
+	--color-chrome-active:      #0058bf;
+
+	/* --- Chart palette -------------------------------------------------------
+	 * A categorical palette: eight colours for eight series, used in order.
+	 *
+	 * Built from the accent and semantic colours already in this file rather
+	 * than copied from SAP's own chart palette, so a chart cannot drift away
+	 * from the rest of the application's colour. The first five are literally
+	 * tokens from above; the last three are chosen to sit between them at a
+	 * similar lightness so no series reads as louder than its neighbours.
+	 *
+	 * Two rules, both of which the chart components depend on:
+	 *
+	 * 1. NO RED. Red means "wrong" everywhere else in this file, and a category
+	 *    that happens to be sixth in a list is not wrong. Semantic charts — a
+	 *    budget overrun, a failure rate — pass --color-danger-border explicitly
+	 *    on the series instead, where red is a statement rather than an
+	 *    accident of ordering.
+	 * 2. Colour is never the only cue. Each series is named in the legend and
+	 *    repeated in the data table every chart renders for screen readers, so
+	 *    a palette that fails in greyscale still leaves the chart readable.
+	 *
+	 * Each clears 3:1 against --color-surface, which is the WCAG 1.4.11 bar for
+	 * a graphical object carrying meaning. */
+	--chart-1: #0070f2;   /* = --color-primary          brand blue            */
+	--chart-2: #6c32a9;   /* = --color-tertiary         purple                */
+	--chart-3: #2b7d42;   /* = --color-success-border   green                 */
+	--chart-4: #dd6100;   /* = --color-warning-border   orange                */
+	--chart-5: #5b738b;   /* = --color-secondary        slate                 */
+	--chart-6: #047d7a;   /* teal, between the green and the blue             */
+	--chart-7: #ba066c;   /* = --color-required         magenta               */
+	--chart-8: #4a4ecc;   /* indigo, between the blue and the purple          */
+
+	/* Chart furniture. Lighter than a table's hairline: a gridline is a reading
+	 * aid behind the data, and one as dark as the data competes with it. */
+	--chart-gridline:   #e5e5e5;   /* = --color-border                        */
+	--chart-axis:       #bcc3ca;   /* = --color-border-strong                 */
+	--chart-label:      #556b82;   /* = --color-text-muted                    */
+
+	/* --- Elevation -----------------------------------------------------------
+	 * SAP tints its shadows with #223548 rather than pure black, so a lifted
+	 * surface reads as cool grey instead of muddy. Shadow 1 and 2 lead with a
+	 * hairline ring (`0 0 0 1px`) because a popover over a white card has no
+	 * tonal edge of its own to sit on. */
+	--shadow-sm: 0 0 0.125rem 0 rgba(34, 53, 72, 0.2), 0 0.125rem 0.25rem 0 rgba(34, 53, 72, 0.2);
+	--shadow-md: 0 0 0 0.0625rem rgba(34, 53, 72, 0.15), 0 0.125rem 0.5rem 0 rgba(34, 53, 72, 0.3);
+	--shadow-lg: 0 0 0 0.0625rem rgba(34, 53, 72, 0.15), 0 0.625rem 1.875rem 0 rgba(34, 53, 72, 0.25);
+
+	/* --- Radius --------------------------------------------------------------
+	 * Fields are tighter than buttons in Fiori (4px against 8px), which is a
+	 * second, quiet signal of what is a box you fill in versus a thing you
+	 * press. Dense business screens read as toys once corners round further. */
+	--radius-sm:   0.25rem;   /* sapField_BorderCornerRadius   — 4px            */
+	--radius-md:   0.5rem;    /* sapButton_BorderCornerRadius  — 8px            */
+	--radius-lg:   0.75rem;   /* cards and tiles               — 12px           */
+	--radius-pill: 999px;
+
+	/* --- Spacing (4px base) --------------------------------------------------- */
+	--space-1: 0.25rem;
+	--space-2: 0.5rem;
+	--space-3: 0.75rem;
+	--space-4: 1rem;
+	--space-5: 1.5rem;
+	--space-6: 2rem;
+	--space-8: 3rem;
+
+	/* --- Typography ----------------------------------------------------------
+	 * "72" is SAP's own typeface and is not redistributable, so it is named
+	 * first and Arial catches everyone who does not have it. SAP's own stack
+	 * falls back the same way, and the metrics are close enough that the
+	 * layout does not move. */
+	--font-sans: "72", "72full", Arial, Helvetica, sans-serif;   /* sapFontFamily */
+	--font-mono: "72Mono", "72Monofull", "SFMono-Regular", ui-monospace, Consolas, monospace;
+
+	/* Base is 14px, not 16px — sapFontSize, and the density business software
+	 * is read at. */
+	--text-xs:  0.6875rem;
+	--text-sm:  0.75rem;
+	--text-md:  0.875rem;   /* sapFontSize                                     */
+	--text-lg:  1rem;
+	--text-xl:  1.125rem;
+	--text-2xl: 1.375rem;
+
+	--weight-normal:   400;
+	--weight-medium:   500;
+	--weight-semibold: 600;
+	--weight-bold:     700;
+
+	--leading-tight:  1.25;
+	--leading-normal: 1.5;   /* sapContent_LineHeight                          */
+
+	/* Headings tighten as they grow; small caps-y labels open up. */
+	--tracking-tight: -0.011em;
+	--tracking-wide:  0.06em;
+
+	/* --- Control metrics -----------------------------------------------------
+	 * SAP ships two densities. Cozy (36px) is the default and is what a form
+	 * on a normal screen uses; compact (26px) is for tables and for screens
+	 * that have to show a lot at once. Both are here so a table and a form can
+	 * disagree about density without either hard-coding a pixel value. */
+	--control-height:         2.25rem;    /* cozy     — 36px                    */
+	--control-height-compact: 1.625rem;   /* compact  — 26px, sapElement_Compact */
+	--control-padding-x:      0.625rem;
+
+	/* Width of the label column when a form puts labels beside its fields. One
+	 * value, so every section on a screen lines up on the same gutter.
+	 *
+	 * 10rem is about eighteen characters at the label size, which covers most
+	 * field names before they wrap, and still leaves a usable control width
+	 * when two fields share a row. */
+	--form-label-width:       10rem;
+
+	/* --- Motion ---------------------------------------------------------------- */
+	--transition-fast: 120ms ease;
+	--transition:      200ms ease;
+}

@@ -1,0 +1,483 @@
+/* =============================================================================
+ * Charts — bar, line and donut, Fiori surface
+ * =============================================================================
+ *
+ * Markup, shared by all three:
+ *
+ *   figure.chart
+ *     figcaption.chart-caption
+ *     p.chart-description
+ *     div.chart-plot                 measured; the tooltip's containing block
+ *       svg.chart-svg[aria-hidden]
+ *       div.chart-tooltip            only while hovering
+ *     ul.chart-legend
+ *     table.chart-data-table         visually hidden, the accessible chart
+ *
+ * -----------------------------------------------------------------------------
+ * The three rules behind how these look
+ * -----------------------------------------------------------------------------
+ * 1. **The data is the darkest thing.** Gridlines are a hairline lighter than a
+ *    table's rows, axis labels are muted, and the marks carry the palette at full
+ *    strength. A chart where the furniture competes with the data is a chart that
+ *    has to be squinted at.
+ * 2. **No chrome that is not load-bearing.** No border round the plot, no fill
+ *    behind it, no drop shadows on the bars. The card the chart sits in already
+ *    provides the frame; a second one just makes the plot smaller.
+ * 3. **Hover dims, it does not recolour.** Highlighting a category fades the rest
+ *    rather than changing the highlighted one's colour, so a series keeps its
+ *    identity from the legend throughout — recolouring on hover breaks the one
+ *    mapping the reader has learned.
+ * ---------------------------------------------------------------------------*/
+
+.chart {
+	display: flex;
+	flex-direction: column;
+	row-gap: var(--space-2);
+
+	/* A <figure> carries a browser default margin of 1em on all sides, which lines
+	 * a chart up with nothing else on the screen. */
+	margin: 0;
+
+	/* Lets the chart shrink inside a flex or grid parent. Without it the measured
+	 * plot reports its widest content and the chart pushes its container open. */
+	min-width: 0;
+}
+
+.chart-caption {
+	color: var(--color-text-muted);
+	font-size: var(--text-sm);
+	font-weight: var(--weight-semibold);
+}
+
+/* `isCaptionHidden` adds `.erp-visually-hidden` from ../styles/a11y.css. This file
+ * used to carry two copies of those nine declarations — one for the caption, one for
+ * the data table below. */
+
+.chart-description {
+	margin: 0;
+	color: var(--color-text-subtle);
+	font-size: var(--text-sm);
+}
+
+/* The measured box.
+ *
+ * `position: relative` makes it the containing block for the tooltip, which is
+ * absolutely positioned HTML rather than SVG — see ChartTooltip for why.
+ *
+ * `min-width: 0` again, and it is doing real work: this is the element the
+ * ResizeObserver watches, so if it refused to shrink the chart could never get
+ * narrower than its first measurement. */
+.chart-plot {
+	position: relative;
+	min-width: 0;
+}
+
+.chart-svg {
+	display: block;
+
+	/* Chart text is set once, here, so every label in every chart matches. 11px is
+	 * the floor: below that the labels fail WCAG 1.4.4 when the page is zoomed,
+	 * because SVG text set in px does not reflow. */
+	font-family: var(--font-sans);
+	font-size: 11px;
+
+	/* Digits of equal width, so a column of axis labels lines up on its decimal
+	 * point rather than drifting. */
+	font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------------------
+ * Axes
+ * -------------------------------------------------------------------------*/
+
+/* A reading aid, deliberately fainter than a table hairline. It sits behind the
+ * data and should be findable when looked for and invisible otherwise. */
+.chart-gridline {
+	stroke: var(--chart-gridline);
+	stroke-width: 1;
+}
+
+/* The zero line is structure, not a gridline: every bar is measured from it. A step
+ * darker so it reads as the axis the chart stands on. */
+.chart-baseline {
+	stroke: var(--chart-axis);
+	stroke-width: 1;
+}
+
+.chart-axis-label {
+	fill: var(--chart-label);
+
+	/* The labels are not selectable. Dragging across a chart to read a number would
+	 * otherwise highlight the axis, and there is a data table for the numbers. */
+	user-select: none;
+}
+
+/* ---------------------------------------------------------------------------
+ * Bars
+ * -------------------------------------------------------------------------*/
+
+.chart-bar {
+	/* The fill comes from the series colour, inline on the group. */
+	transition: opacity var(--transition-fast);
+}
+
+/* Everything outside the hovered category. Faded rather than recoloured — see rule
+ * 3 at the top of this file. 0.35 is low enough to recede and high enough that the
+ * shape of the rest of the chart is still readable for comparison. */
+.chart-bar-dimmed {
+	opacity: 0.35;
+}
+
+/* ---------------------------------------------------------------------------
+ * Lines
+ * -------------------------------------------------------------------------*/
+
+.chart-line {
+	stroke-width: 2;
+
+	/* Rounded joins and caps, so a sharp change of direction does not produce a
+	 * spike of mitred stroke sticking out past the point. */
+	stroke-linejoin: round;
+	stroke-linecap: round;
+}
+
+/* The fill under a line. Faint, because it is there to give the line weight rather
+ * than to be read — the line's position is the data, and a solid fill would make
+ * the area look like the quantity. */
+.chart-area {
+	opacity: 0.14;
+}
+
+.chart-point {
+	/* A white ring, so a marker sitting on top of the line or on another series
+	 * still reads as a distinct point rather than a thickening. */
+	stroke: var(--color-surface);
+	stroke-width: 1.5;
+	transition: r var(--transition-fast);
+}
+
+.chart-point-active {
+	stroke-width: 2;
+}
+
+/* ---------------------------------------------------------------------------
+ * Hover
+ * -------------------------------------------------------------------------*/
+
+/* Invisible full-height hit areas, one per category. Hovering the column rather
+ * than the mark means a 2px-tall bar is as easy to reach as a full-height one, and
+ * a category with no data at all still responds. */
+.chart-hover-band {
+	fill: transparent;
+	cursor: default;
+}
+
+/* A barely-there wash marking the hovered column. Lighter than the selection wash
+ * in the data grid, because here it is a transient hover rather than a state the
+ * user has chosen. */
+.chart-hover-band-active {
+	fill: var(--color-primary);
+	fill-opacity: 0.06;
+}
+
+/* The vertical rule on a line chart, tying the tooltip to the category it reads. */
+.chart-hover-guide {
+	stroke: var(--chart-axis);
+	stroke-width: 1;
+
+	/* Dashed, so it cannot be mistaken for a gridline or for another series. */
+	stroke-dasharray: 3 3;
+}
+
+/* ---------------------------------------------------------------------------
+ * Donut
+ * -------------------------------------------------------------------------*/
+
+.chart-slice {
+	/* Separates neighbouring wedges without a gap, which would let the background
+	 * through and break the ring. */
+	stroke: var(--color-surface);
+	stroke-width: 1.5;
+
+	/* `d` is animatable in browsers that support it and ignored elsewhere, so the
+	 * hovered wedge's 3px growth eases rather than snapping. */
+	transition: d var(--transition-fast);
+	cursor: default;
+}
+
+.chart-slice-active {
+	stroke-width: 2;
+}
+
+.chart-donut-empty {
+	stroke: var(--color-border);
+}
+
+/* The figure in the hole. `pointer-events: none` so it never swallows a hover meant
+ * for the wedge behind it — text in the middle of a donut sits over the hole, but a
+ * <text> element's box is wider than its glyphs. */
+.chart-donut-centre {
+	pointer-events: none;
+}
+
+.chart-donut-total {
+	fill: var(--color-text);
+	font-size: var(--text-lg);
+	font-weight: var(--weight-bold);
+}
+
+.chart-donut-total-label {
+	fill: var(--color-text-subtle);
+	font-size: var(--text-xs);
+	text-transform: uppercase;
+	letter-spacing: var(--tracking-wide);
+}
+
+/* Legend beside the circle rather than under it, which is the donut's default. The
+ * plot and the legend are siblings inside .chart, so this turns the column into a
+ * row — document order is unchanged, so the tab and reading order are too. */
+.chart-donut-beside {
+	display: grid;
+
+	/* The circle takes a fixed share and the legend the rest. `minmax(0, …)` on both
+	 * so a long series name wraps instead of widening the grid. */
+	grid-template-columns: minmax(0, 11rem) minmax(0, 1fr);
+	grid-template-areas:
+		'caption caption'
+		'description description'
+		'plot legend'
+		'table table';
+	align-items: center;
+	column-gap: var(--space-4);
+}
+
+.chart-donut-beside > .chart-caption {
+	grid-area: caption;
+}
+
+.chart-donut-beside > .chart-description {
+	grid-area: description;
+}
+
+.chart-donut-beside > .chart-plot {
+	grid-area: plot;
+}
+
+.chart-donut-beside > .chart-legend {
+	grid-area: legend;
+
+	/* Stacked, not wrapped: beside the circle each entry is a row carrying a label
+	 * and a figure, which is what makes the legend readable as a small table. */
+	flex-direction: column;
+	align-items: stretch;
+	margin-top: 0;
+}
+
+.chart-donut-beside > .chart-data-table {
+	grid-area: table;
+}
+
+/* Under 520px the two columns leave the circle too small to read. Back to a
+ * single column, with the legend below. */
+@media (max-width: 520px) {
+	.chart-donut-beside {
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-areas:
+			'caption'
+			'description'
+			'plot'
+			'legend'
+			'table';
+	}
+}
+
+/* ---------------------------------------------------------------------------
+ * Legend
+ * -------------------------------------------------------------------------*/
+
+.chart-legend {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-1) var(--space-4);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	font-size: var(--text-sm);
+	color: var(--color-text-muted);
+}
+
+.chart-legend-top {
+	margin-bottom: var(--space-1);
+}
+
+.chart-legend-bottom {
+	margin-top: var(--space-1);
+}
+
+.chart-legend-item {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	min-width: 0;
+}
+
+/* A rounded square rather than a line or a dot. Big enough (10px) that the colour
+ * is identifiable — a 4px dot of #2b7d42 next to one of #047d7a is a guess. */
+.chart-legend-swatch {
+	flex-shrink: 0;
+	width: 10px;
+	height: 10px;
+	border-radius: 2px;
+}
+
+.chart-legend-label {
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+/* The figure in a donut's legend. `margin-left: auto` pushes it to the far edge, so
+ * a stacked legend's values line up in a column and can be compared. */
+.chart-legend-value {
+	margin-left: auto;
+	padding-left: var(--space-2);
+	color: var(--color-text);
+	font-weight: var(--weight-semibold);
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.chart-legend-share {
+	margin-left: var(--space-2);
+	color: var(--color-text-subtle);
+	font-weight: var(--weight-normal);
+}
+
+/* ---------------------------------------------------------------------------
+ * Tooltip
+ * -------------------------------------------------------------------------*/
+
+.chart-tooltip {
+	position: absolute;
+
+	/* Above the SVG, and inert. It follows the pointer, so if it could be hovered it
+	 * would steal the hover keeping it open and flicker. */
+	z-index: 1;
+	pointer-events: none;
+
+	min-width: 7rem;
+	max-width: 16rem;
+	padding: var(--space-2) var(--space-3);
+
+	/* Lifted clear of the point it describes, on top of the -100% translate the
+	 * component applies. */
+	margin-top: calc(-1 * var(--space-2));
+
+	background-color: var(--color-surface);
+	border: 1px solid var(--color-border-strong);
+	border-radius: var(--radius-sm);
+	box-shadow: var(--shadow-md);
+	font-size: var(--text-sm);
+	color: var(--color-text);
+}
+
+.chart-tooltip-title {
+	margin: 0 0 var(--space-1);
+	font-weight: var(--weight-bold);
+	white-space: nowrap;
+}
+
+.chart-tooltip-rows {
+	display: flex;
+	flex-direction: column;
+	row-gap: 2px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.chart-tooltip-row {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+}
+
+.chart-tooltip-swatch {
+	flex-shrink: 0;
+	width: 8px;
+	height: 8px;
+	border-radius: 2px;
+}
+
+.chart-tooltip-label {
+	overflow: hidden;
+	color: var(--color-text-muted);
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+/* Pushed to the right edge and tabular, so two series' figures line up under one
+ * another and can be compared at a glance rather than read one at a time. */
+.chart-tooltip-value {
+	margin-left: auto;
+	font-weight: var(--weight-semibold);
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------------
+ * The accessible data table
+ * -------------------------------------------------------------------------*/
+
+/* The table itself is hidden by `.erp-visually-hidden` from ../styles/a11y.css,
+ * which the component applies alongside this class — clipped to a 1px box rather
+ * than `display: none`, because that would remove it from the accessibility tree
+ * too and the SVG beside it is already `aria-hidden`.
+ *
+ * This class is left as a positioning hook only: the donut's side-by-side layout
+ * places it by grid area. No declarations of its own, and deliberately not deleted —
+ * `.chart-donut-beside > .chart-data-table` needs something to select. */
+.chart-data-table {
+	/* Intentionally empty. See above. */
+}
+
+/* ---------------------------------------------------------------------------
+ * Forced colours (Windows high contrast)
+ * -------------------------------------------------------------------------*/
+
+/* The palette is the one thing a chart cannot do without, and forced-colours mode
+ * replaces every colour with one of a handful of system ones — so eight series
+ * become eight identical shapes.
+ *
+ * `forced-color-adjust: none` opts the marks out and keeps the palette. That is
+ * normally the wrong instinct, and it is right here: the user's colour choice is
+ * about legible text and UI, and a chart whose series cannot be told apart is not
+ * more legible, it is unreadable. The furniture around the marks still honours the
+ * system colours, and the data table is unaffected either way. */
+@media (forced-colors: active) {
+	.chart-bar,
+	.chart-line,
+	.chart-area,
+	.chart-point,
+	.chart-slice,
+	.chart-legend-swatch,
+	.chart-tooltip-swatch {
+		forced-color-adjust: none;
+	}
+
+	.chart-gridline,
+	.chart-baseline,
+	.chart-hover-guide {
+		stroke: CanvasText;
+	}
+
+	.chart-axis-label {
+		fill: CanvasText;
+	}
+
+	/* The shadow is gone, so the box needs a real edge to sit on. */
+	.chart-tooltip {
+		border-color: CanvasText;
+	}
+}

@@ -28,6 +28,24 @@
  *   brand border. Two marks, because "the range" and "the cell that moves when
  *   I press an arrow" are different things and confusing them makes editing feel
  *   unpredictable.
+ *
+ * -----------------------------------------------------------------------------
+ * The sizing model, since it is half CSS and half component
+ * -----------------------------------------------------------------------------
+ * Every column has a definite pixel width, set inline on a `<col>`. The
+ * component adds them up and puts the total on the table. Then:
+ *
+ * - **Total wider than the container.** `.grid-scroll` scrolls horizontally. The
+ *   header stays stuck to the top, the row gutter stays stuck to the left.
+ * - **Total narrower.** `min-width: 100%` on the table stretches it to the
+ *   container, and the trailing `.grid-filler` column — the only one with an auto
+ *   width — takes every spare pixel.
+ *
+ * The filler is the whole reason this works. Under `table-layout: fixed`, spare
+ * width is shared out among the columns whose width is auto; with no auto column
+ * it is spread across *all* of them, silently inflating widths the caller asked
+ * for precisely. One auto column at the end means "fill the parent" and "these
+ * columns are exactly this wide" stop being contradictory.
  * ---------------------------------------------------------------------------*/
 
 .grid {
@@ -44,26 +62,43 @@
 	font-weight: var(--weight-semibold);
 }
 
-.grid-caption-hidden {
-	position: absolute;
-	width: 1px;
-	height: 1px;
-	margin: -1px;
-	padding: 0;
-	overflow: hidden;
-	clip-path: inset(50%);
-	white-space: nowrap;
-	border: 0;
-}
+/* `isCaptionHidden` adds `.erp-visually-hidden` from ../styles/a11y.css, which is
+ * shared with the form's hidden labels and the charts' captions and data tables.
+ * This file used to carry its own copy of the same nine declarations. */
 
-/* The scrollport. Both axes, so a wide grid scrolls sideways instead of
- * stretching the page, and the sticky header below anchors to this box. */
+/* The scrollport, and the grid's outer frame.
+ *
+ * Full width of whatever it is dropped into, and scrolling on both axes — so the
+ * grid is a fixed-size window onto the table rather than something that stretches
+ * the page to fit. `maxHeight` is set inline from the `maxBodyHeight` prop.
+ *
+ * `overflow: auto` also makes this the containing block the sticky header and
+ * sticky gutter anchor to, which is why they stay put while the content moves
+ * under them. */
 .grid-scroll {
 	position: relative;
+	width: 100%;
 	overflow: auto;
+
+	/* Horizontal axis only. Reaching the right-hand end of a wide table must not
+	 * hand the gesture on to the browser, where a trackpad swipe is "go back" and
+	 * would navigate away from a half-filled form.
+	 *
+	 * Deliberately *not* set on the vertical axis: a grid is a panel inside a long
+	 * form, and scrolling the page with the cursor over it has to carry on down
+	 * the page once the grid reaches its last row. */
+	overscroll-behavior-x: contain;
+
 	background-color: var(--color-surface);
 	border: 1px solid var(--color-border-strong);
 	border-radius: var(--radius-sm);
+}
+
+/* While a range drag is armed — shift held, or the press held long enough —
+ * dragging extends the selection. The crosshair is what says so; without it the
+ * arming delay is invisible and the grid just feels inconsistent. */
+.grid-scroll-armed .grid-cell {
+	cursor: crosshair;
 }
 
 .grid-table {
@@ -74,20 +109,20 @@
 	border-collapse: separate;
 	border-spacing: 0;
 
-	/* Fixed layout, and it is doing two jobs.
+	/* Column widths come from the <colgroup> and are authoritative, so columns
+	 * hold their size instead of being re-fitted to their content as the user
+	 * types — and the table is far cheaper to lay out than an auto one.
 	 *
-	 * Column widths come from the <colgroup> and stay put, so columns do not jump
-	 * about as the user types, and the table is far cheaper to lay out than an
-	 * auto one.
-	 *
-	 * It is also what makes a column with no declared width fill the parent: the
-	 * fixed algorithm hands every leftover pixel to the columns whose width is
-	 * auto. No measuring, no ResizeObserver.
-	 *
-	 * The width itself is set inline by the component, which has to choose between
-	 * 100% and an explicit total depending on whether anything is flexing — see
-	 * the note on `tableStyle`. */
+	 * It is also what makes the filler column work: the fixed algorithm hands
+	 * spare width to the columns whose width is auto, and the filler is the only
+	 * one. See the header of this file. */
 	table-layout: fixed;
+
+	/* The component sets `width` inline to the sum of the columns. This floor
+	 * stretches the table to the container when that sum is smaller, so the grid
+	 * still reaches the right-hand edge of the card it sits in — the spare width
+	 * lands in the filler column rather than in the real ones. */
+	min-width: 100%;
 
 	font-size: var(--text-sm);
 	font-variant-numeric: tabular-nums;
@@ -175,6 +210,14 @@
 .grid-header-label {
 	overflow: hidden;
 	text-overflow: ellipsis;
+}
+
+/* An unsortable heading has no button to carry the padding for it, so it supplies
+ * its own — otherwise the text sits flush against the grid line while every
+ * sortable heading beside it is inset, and the row of headings looks ragged. */
+.grid-header-label-static {
+	display: block;
+	padding: var(--space-2) var(--space-3);
 }
 
 /* The direction arrow: a triangle from borders, so it needs no icon asset and
@@ -423,6 +466,39 @@
 	background-color: transparent;
 	border: none;
 	outline: none;
+}
+
+/* ---------------------------------------------------------------------------
+ * Filler column
+ * -------------------------------------------------------------------------*/
+
+/* The empty cell after the last column, one per row. Its `<col>` is the only one
+ * with an auto width, so it absorbs whatever is left over when the real columns
+ * are narrower than the container — see the header of this file.
+ *
+ * Bottom border only. A right border would draw a line down the middle of the
+ * empty space, and there is nothing to its right to separate it from. When the
+ * table overflows instead, this column collapses to zero and the borders it does
+ * have have nothing to paint. */
+.grid-filler {
+	padding: 0;
+	border-bottom: 1px solid var(--color-border);
+
+	/* Not a cell: the cursor must not suggest it can be selected or typed in. */
+	cursor: default;
+	user-select: none;
+}
+
+/* Matches the header's own fill and bottom edge, so the heading strip runs the
+ * full width of the table rather than stopping at the last real column. Sticky
+ * for the same reason the other header cells are — it scrolls with them. */
+.grid-filler-header {
+	position: sticky;
+	top: 0;
+	padding: 0;
+	background-color: var(--color-surface-sunken);
+	box-shadow: inset 0 -1px 0 0 var(--color-border-strong);
+	border-bottom: none;
 }
 
 .grid-empty {

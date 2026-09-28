@@ -1,0 +1,380 @@
+/* =============================================================================
+ * Modal — dialog surface, Fiori
+ * =============================================================================
+ *
+ * Markup:
+ *
+ *   dialog.modal.modal-{size}
+ *     div.modal-frame              fills the dialog edge to edge
+ *       header.modal-header
+ *         div.modal-heading
+ *           h2.modal-title
+ *           p.modal-description
+ *         button.modal-close
+ *       div.modal-body             the only part that scrolls
+ *       footer.modal-footer
+ *
+ * The dialog is white like a card, because that is what it is — a card that has
+ * come to the front. What marks it as *modal* is the backdrop and the elevation,
+ * not a different colour, so the content inside can be styled exactly as it would
+ * be on the page behind.
+ *
+ * Header and footer are fixed; the body scrolls. Three rows of a grid rather than
+ * `position: sticky`, so the footer sits at the bottom of the *dialog* and not at
+ * the bottom of its content — a Save button that scrolls out of reach is the most
+ * common thing wrong with a hand-rolled modal.
+ * ---------------------------------------------------------------------------*/
+
+.modal {
+	/* No padding at all, and this is load-bearing rather than cosmetic. The frame
+	 * inside fills the dialog exactly, so every press that lands on the <dialog>
+	 * element itself must have come through the backdrop — which is how Modal.tsx
+	 * tells a dismissal from a press on the content. A stray 1rem of padding here
+	 * would put a ring of dialog around the frame that reads as backdrop and
+	 * closes the dialog when clicked. */
+	padding: 0;
+
+	/* Cancels the UA's default border and lets the frame's own radius show. */
+	border: none;
+	border-radius: var(--radius-lg);
+	background-color: var(--color-surface);
+	color: var(--color-text);
+	box-shadow: var(--shadow-lg);
+
+	/* The UA centres a modal dialog with `margin: auto` already; these cap it so a
+	 * tall dialog stops short of the viewport edges and its body scrolls instead.
+	 * `max-width: 100%` of the containing block, less a margin, keeps a
+	 * fixed-width size usable on a narrow screen without a separate media query
+	 * per size. */
+	max-width: calc(100vw - 2 * var(--space-5));
+	max-height: calc(100vh - 2 * var(--space-6));
+
+	/* The frame manages its own overflow in three rows. Hidden here so the
+	 * corners actually clip the header's fill. */
+	overflow: hidden;
+
+	/* --- Entry and exit ------------------------------------------------------
+	 * `allow-discrete` is what makes this work on a <dialog>: `display` and
+	 * `overlay` are discrete properties, and without it the element is removed
+	 * from the top layer the instant it closes, so the exit transition never gets
+	 * a frame to run in. `@starting-style` below supplies the "before open" state,
+	 * which is otherwise unreachable — an element cannot transition from a style
+	 * it has never had.
+	 *
+	 * Browsers without either simply snap, which is a fine dialog. And the global
+	 * prefers-reduced-motion rule in ../styles/base.css turns all of it off. */
+	opacity: 0;
+	transform: translateY(0.5rem) scale(0.98);
+	transition:
+		opacity var(--transition),
+		transform var(--transition),
+		overlay var(--transition) allow-discrete,
+		display var(--transition) allow-discrete;
+}
+
+.modal[open] {
+	opacity: 1;
+	transform: none;
+}
+
+@starting-style {
+	.modal[open] {
+		opacity: 0;
+		transform: translateY(0.5rem) scale(0.98);
+	}
+}
+
+/* Tinted with SAP's shadow ink rather than pure black, so the page behind reads
+ * as dimmed rather than as muddy — the same ink the elevation tokens use. */
+.modal::backdrop {
+	background-color: rgba(34, 53, 72, 0.6);
+	opacity: 0;
+	transition: opacity var(--transition), overlay var(--transition) allow-discrete, display var(--transition) allow-discrete;
+}
+
+.modal[open]::backdrop {
+	opacity: 1;
+}
+
+@starting-style {
+	.modal[open]::backdrop {
+		opacity: 0;
+	}
+}
+
+/* -----------------------------------------------------------------------------
+ * Background scroll lock
+ * ---------------------------------------------------------------------------*/
+
+/* `showModal()` makes the page behind inert — unclickable, untabbable, hidden
+ * from screen readers — but it does *not* stop the wheel from scrolling it. So
+ * the page visibly slides around behind a dialog that has taken it over, which
+ * reads as the dialog having lost its place.
+ *
+ * `:has()` rather than a class toggled from JavaScript: there is no state to keep
+ * in step, so the lock cannot be left on by a dialog that unmounted while open.
+ * It also covers every dialog on the page at once, including nested ones.
+ *
+ * The scrollbar this removes is reserved unconditionally by the rule below, which is
+ * why the page does not jump sideways as the lock engages. */
+body:has(dialog.modal[open]) {
+	overflow: hidden;
+}
+
+/* Reserves the scrollbar's width whether or not the page is currently long enough
+ * to need one.
+ *
+ * This rule exists *for* the lock above, which is why it lives in this file rather
+ * than in the theme's `base.css`: hiding the body's overflow removes the scrollbar,
+ * and without a reserved gutter the whole page jumps sideways by its width as the
+ * dialog opens and jumps back when it closes. Reserving it once is cheaper than
+ * measuring the scrollbar and compensating with padding on every overlay.
+ *
+ * It is not scoped to `:has(dialog[open])` on purpose — the gutter has to already be
+ * there when the dialog opens, or reserving it *is* the layout shift.
+ *
+ * The cost is a thin empty strip on the right of a screen short enough not to
+ * scroll. In an application where almost every screen is a long form, that is a fair
+ * trade for never moving the page under someone's cursor. */
+html {
+	scrollbar-gutter: stable;
+}
+
+/* -----------------------------------------------------------------------------
+ * Sizes
+ * ---------------------------------------------------------------------------*/
+
+/* Widths in rem, so a dialog holding a form scales with the type rather than
+ * staying a fixed number of pixels while the text inside it grows. */
+.modal-small {
+	width: 28rem;
+}
+
+.modal-medium {
+	width: 40rem;
+}
+
+.modal-large {
+	width: 64rem;
+}
+
+/* Deliberately ignores the max-height cap above by matching it: a full dialog is
+ * meant to take the viewport, and its content — a grid, usually — wants to know
+ * it has a fixed height to scroll inside. */
+.modal-full {
+	width: calc(100vw - 2 * var(--space-5));
+	height: calc(100vh - 2 * var(--space-6));
+}
+
+/* -----------------------------------------------------------------------------
+ * Frame
+ * ---------------------------------------------------------------------------*/
+
+/* Three rows: header, body, footer. The body is the only one that gives, which is
+ * what pins the other two.
+ *
+ * `minmax(0, 1fr)` on the middle row, not `1fr`. A grid row's automatic minimum
+ * size is its content, so a plain `1fr` refuses to shrink below the body's full
+ * height — the body never scrolls, the dialog grows past its max-height, and the
+ * footer goes off the bottom of the screen. */
+.modal-frame {
+	display: grid;
+	grid-template-rows: auto minmax(0, 1fr) auto;
+
+	/* Fills the dialog, so the dialog element's own box is never exposed to a
+	 * press. See the note on `.modal { padding: 0 }`. */
+	width: 100%;
+	height: 100%;
+	max-height: inherit;
+}
+
+/* -----------------------------------------------------------------------------
+ * Header
+ * ---------------------------------------------------------------------------*/
+
+.modal-header {
+	display: flex;
+	align-items: flex-start;
+	column-gap: var(--space-4);
+	padding: var(--space-4) var(--space-5);
+
+	/* A hairline rather than a fill. The header is part of the same white card as
+	 * the body; the rule is there to stop a long title running visually into the
+	 * first field. */
+	border-bottom: 1px solid var(--color-border);
+}
+
+.modal-heading {
+	display: flex;
+	flex-direction: column;
+	row-gap: var(--space-1);
+
+	/* Lets the title's own overflow handling work: a flex item will not shrink
+	 * below its content's intrinsic width without this. */
+	min-width: 0;
+	flex: 1;
+}
+
+.modal-title {
+	margin: 0;
+	font-size: var(--text-xl);
+
+	/* Wraps rather than truncating. A dialog title is usually a question, and half
+	 * a question with an ellipsis is not one. */
+	overflow-wrap: break-word;
+}
+
+.modal-description {
+	margin: 0;
+	color: var(--color-text-muted);
+	font-size: var(--text-md);
+}
+
+/* Square, transparent, and the only icon-only control in the frame. Overrides the
+ * <button> baseline in index.css down to a quiet glyph — a bordered blue button in
+ * the corner of every dialog would read as an action rather than as a way out. */
+.modal-close {
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: var(--control-height);
+	height: var(--control-height);
+	min-height: 0;
+	padding: 0;
+	background: none;
+	border: none;
+	border-radius: var(--radius-sm);
+	color: var(--color-text-muted);
+	cursor: pointer;
+}
+
+.modal-close:hover {
+	background-color: var(--color-chrome-hover);
+	color: var(--color-text);
+}
+
+.modal-close:active {
+	background-color: var(--color-primary-soft);
+	border-color: transparent;
+}
+
+.modal-close > svg {
+	width: 1.125rem;
+	height: 1.125rem;
+
+	/* The glyph is a path with no fill of its own, so it takes the button's
+	 * colour and follows the hover above. */
+	fill: currentColor;
+}
+
+/* -----------------------------------------------------------------------------
+ * Body
+ * ---------------------------------------------------------------------------*/
+
+.modal-body {
+	padding: var(--space-5);
+
+	/* The scrolling row. `auto` rather than `scroll` so a short dialog has no
+	 * inert scrollbar track down its side. */
+	overflow: auto;
+	overscroll-behavior: contain;
+}
+
+/* Rhythm between stacked children, so a body holding a message strip, a grid and a
+ * total does not run them together — and so no caller has to wrap its content in a
+ * spacing div to get the obvious result.
+ *
+ * Margins rather than `display: flex` with a `gap`. A flex column would let a tall
+ * child shrink instead of overflowing, which is precisely the wrong answer here: the
+ * body is the scrolling row, and content taller than it has to scroll rather than be
+ * squashed.
+ *
+ * The adjacent-sibling form leaves the first child alone, so the spacing never
+ * doubles up with the padding above it. */
+.modal-body > * + * {
+	margin-top: var(--space-4);
+}
+
+/* A <p> or heading at either end of the body arrives with the browser's own margin,
+ * which adds to the padding and makes the dialog look unevenly inset — more space
+ * above the first line than beside it. */
+.modal-body > :first-child {
+	margin-top: 0;
+}
+
+.modal-body > :last-child {
+	margin-bottom: 0;
+}
+
+/* For content that draws its own frame — a DataGrid, a chart, an image — where
+ * the dialog's padding would put a second border around a first one. */
+.modal-body-flush {
+	padding: 0;
+}
+
+/* -----------------------------------------------------------------------------
+ * Footer
+ * ---------------------------------------------------------------------------*/
+
+/* Buttons right-aligned, in the order they were written, so the confirming action
+ * lands rightmost — the same place every OS dialog puts it.
+ *
+ * Never `row-reverse`. That would make the tab order run right-to-left while the
+ * buttons read left-to-right, which is the focus-order trap in WCAG 2.4.3 and the
+ * reason FormActions does not do it either. */
+.modal-footer {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--space-2);
+	padding: var(--space-4) var(--space-5);
+	background-color: var(--color-surface);
+	border-top: 1px solid var(--color-border);
+}
+
+/* -----------------------------------------------------------------------------
+ * Narrow screens
+ * ---------------------------------------------------------------------------*/
+
+/* Below this the fixed widths above are all wider than the viewport, so every
+ * size collapses to the same near-full-screen sheet. Buttons go full width and
+ * stack, because a row of three at 360px leaves three unreadable labels. */
+@media (max-width: 480px) {
+	.modal {
+		width: calc(100vw - 2 * var(--space-3));
+		max-height: calc(100vh - 2 * var(--space-4));
+	}
+
+	.modal-header,
+	.modal-body,
+	.modal-footer {
+		padding-left: var(--space-4);
+		padding-right: var(--space-4);
+	}
+
+	.modal-footer {
+		flex-direction: column-reverse;
+		align-items: stretch;
+	}
+}
+
+/* -----------------------------------------------------------------------------
+ * Forced colours (Windows high contrast)
+ * ---------------------------------------------------------------------------*/
+
+/* The shadow is the only thing separating the dialog from the page, and the OS
+ * discards it — leaving a white box on a white page with no edge. A real border
+ * replaces it. The backdrop's tint goes the same way, so it falls back to the
+ * system's own window fill at a lower opacity. */
+@media (forced-colors: active) {
+	.modal {
+		border: 1px solid CanvasText;
+	}
+
+	.modal::backdrop {
+		background-color: Canvas;
+		opacity: 0.85;
+	}
+}

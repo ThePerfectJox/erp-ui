@@ -1,0 +1,48 @@
+/* =============================================================================
+ * Form styles
+ * =============================================================================
+ *
+ * Imported once, by `../index.ts`. Seventeen components share these rules, so
+ * importing them per component would mean seventeen import statements pointing at
+ * the same five files and a cascade order that depended on which component the
+ * bundler evaluated first.
+ *
+ * This was one 1,573-line file. It was organised by component, which is a
+ * reasonable way to organise a stylesheet and a poor way to find the rule you are
+ * looking for at that length — and it hid a real structural problem: the ComboBox
+ * section had been appended *after* the file's closing forced-colours block, with a
+ * second forced-colours block of its own. Nobody spots that in a file you scroll
+ * through.
+ *
+ * -----------------------------------------------------------------------------
+ * The five files, and why the order is what it is
+ * -----------------------------------------------------------------------------
+ * | File | Scope |
+ * | --- | --- |
+ * | `structure.css` | the form, its sections and rows, the action bar, the message strip |
+ * | `field.css` | the field wrapper, the `--field-*` state variables, label, hint, message |
+ * | `controls.css` | the field box and every control that sits in one |
+ * | `button.css` | the five button variants |
+ * | `combobox.css` | the searchable dropdown and its popup |
+ *
+ * Read `field.css` first if you are changing anything visual. It declares the three
+ * variables every control reads, so a state added there applies to all of them at
+ * once — and a state added anywhere else is a state that only works on one control.
+ *
+ * The order matters, and it is the order the sections appeared in before the split.
+ * Two dependencies rely on it:
+ *
+ * - `field.css` before `controls.css`, because read-only and the value states set
+ *   variables that the control rules consume.
+ * - `controls.css` before `combobox.css`, because the combobox's input *is* a
+ *   `.form-control` and only overrides the trailing padding and the cursor.
+ *
+ * `structure.css` is first because it seeds the `--field-*` defaults on `.form`, so
+ * a control outside any field still resolves them.
+ * ---------------------------------------------------------------------------*/
+
+@import './structure.css';
+@import './field.css';
+@import './controls.css';
+@import './button.css';
+@import './combobox.css';

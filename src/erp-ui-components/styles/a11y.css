@@ -1,0 +1,50 @@
+/* =============================================================================
+ * Accessibility helpers
+ * =============================================================================
+ *
+ * One class, shared by four components that all need the same thing: text that
+ * is available to a screen reader and not on screen.
+ *
+ * It was written out four times before this file existed — in Form.css as
+ * `.form-field-label-hidden`, in DataGrid.css as `.grid-caption-hidden`, and
+ * twice in Chart.css as `.chart-caption-hidden` and `.chart-data-table`. Nine
+ * identical declarations, four names, and four chances to get one of them subtly
+ * wrong. It is exactly the kind of thing that belongs in one place.
+ * ---------------------------------------------------------------------------*/
+
+/**
+ * Hides an element visually while leaving it in the accessibility tree.
+ *
+ * Used for a label that would be redundant on screen but is still the control's
+ * name, a caption a designer does not want above a table, and the data table
+ * every chart renders behind its SVG.
+ *
+ * Not `display: none` and not `visibility: hidden`. Both of those remove the
+ * element from the accessibility tree as well as from view, which defeats the
+ * entire point — the text is being kept *for* assistive technology.
+ *
+ * The selector is doubled on purpose. Component stylesheets load after this file,
+ * so a rule of equal specificity in one of them (`.grid-caption { margin: 0 }`,
+ * `.chart-caption { font-size: … }`) would win on any property the two share and
+ * quietly partially un-hide the element. Two classes lifts this above them
+ * without reaching for `!important`, and without this file having to know which
+ * components use it.
+ */
+.erp-visually-hidden.erp-visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+
+	/* `clip-path` rather than the older `clip: rect(...)`, which is deprecated.
+	 * `inset(50%)` clips to a zero-area box at the element's centre. */
+	clip-path: inset(50%);
+
+	/* Stops a long label being wrapped into a tall 1px-wide column, which some
+	 * engines then report odd geometry for. */
+	white-space: nowrap;
+
+	border: 0;
+}

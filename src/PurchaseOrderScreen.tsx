@@ -20,6 +20,9 @@ import {
 	TextArea,
 	TextInput,
 } from './erp-ui-components/form'
+import { BarChart, DonutChart, LineChart } from './erp-ui-components/chart'
+import type { ChartSlice } from './erp-ui-components/chart'
+import { Modal } from './erp-ui-components/overlay'
 import { DataGrid } from './erp-ui-components/sheet'
 import type { GridColumn, GridRow, RowChangeKind } from './erp-ui-components/sheet'
 import './PurchaseOrderScreen.css'
@@ -98,15 +101,62 @@ const COST_CENTRES = [
 	{ value: '9000', label: '9000 — Administration' },
 ]
 
+/**
+ * An item's net value.
+ *
+ * Defined once and used by the grid's derived column, the charts and the modal, so
+ * the three cannot disagree about what a line is worth — which is the kind of
+ * discrepancy that gets blamed on the database.
+ */
+function netValueOf(row: GridRow): number {
+	const quantity = typeof row.quantity === 'number' ? row.quantity : 0
+	const price = typeof row.price === 'number' ? row.price : 0
+
+	return quantity * price
+}
+
+/**
+ * Running totals: `[a, a + b, a + b + c, …]`.
+ *
+ * A module-level function rather than an accumulator variable inside the component.
+ * Threading a `let` through a `map` callback during render is what
+ * `react-hooks/immutability` exists to catch — under the React compiler that
+ * variable can survive into the next render and quietly double the totals.
+ */
+function runningTotals(values: readonly number[]): number[] {
+	return values.reduce<number[]>((totals, value) => {
+		totals.push((totals.length > 0 ? totals[totals.length - 1] : 0) + value)
+
+		return totals
+	}, [])
+}
+
+/** Material number prefix to the group it belongs to, for the donut. */
+const MATERIAL_GROUPS: Record<string, string> = {
+	R: 'Raw material',
+	H: 'Hardware',
+	P: 'Consumable',
+	C: 'Packaging',
+	S: 'Service',
+}
+
+function materialGroupOf(row: GridRow): string {
+	const material = typeof row.material === 'string' ? row.material : ''
+
+	return MATERIAL_GROUPS[material.charAt(0)] ?? 'Other'
+}
+
+const EURO = new Intl.NumberFormat(undefined, { style: 'currency', currency: 'EUR' })
+
 const ITEM_COLUMNS: GridColumn[] = [
 	/* Item number is the document's own sequence, so sorting by it is how you get
 	 * back to document order after sorting by something else. */
 	{ key: 'item', header: 'Item', width: 70, type: 'number', isReadOnly: true },
 	{ key: 'material', header: 'Material', width: 110 },
-	/* No width, so this takes whatever the sized columns leave — the grid fills
-	 * the card instead of stopping short of it, and the longest text gets the
-	 * room. */
-	{ key: 'description', header: 'Description' },
+	/* Widest, because it holds the longest text. Every column in the grid has a
+	 * definite width — they add up to how wide the table is, and the grid scrolls
+	 * sideways rather than squeezing them to fit the card. */
+	{ key: 'description', header: 'Description', width: 260 },
 	{ key: 'quantity', header: 'Quantity', width: 100, type: 'number' },
 	{ key: 'unit', header: 'Unit', width: 70 },
 	{
@@ -126,16 +176,11 @@ const ITEM_COLUMNS: GridColumn[] = [
 		/* Derived, so it is read-only — and computed here rather than stored, so it
 		 * cannot drift out of step with the quantity and price. */
 		isReadOnly: true,
-		format: (_unused, row) => {
-			const quantity = typeof row.quantity === 'number' ? row.quantity : 0
-			const price = typeof row.price === 'number' ? row.price : 0
-
-			return (quantity * price).toFixed(2)
-		},
+		format: (_unused, row) => netValueOf(row).toFixed(2),
 		/* Nothing is stored under `total`, so without this the sort would read
 		 * undefined from every row and do nothing. The real number, not the
 		 * formatted string — otherwise "100" would sort before "20". */
-		sortValue: row => Number(row.quantity ?? 0) * Number(row.price ?? 0),
+		sortValue: netValueOf,
 	},
 ]
 
@@ -190,6 +235,37 @@ function PurchaseOrderScreen() {
 	const [dirtyItems, setDirtyItems] = useState<Map<string, RowChangeKind>>(new Map())
 
 	const [isSaving, setIsSaving] = useState(false)
+
+	/* The modal is controlled from here, which is the point of `isOpen`/`onClose`:
+	 * the dialog asks to close and this screen decides. */
+	const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+
+	/* --- chart data, all derived from the grid's own rows -------------------
+	 * Nothing here is a separate copy of the data, so editing a quantity in the
+	 * grid moves the bars, the line and the donut on the same keystroke. That is
+	 * the case worth demonstrating — a dashboard fed from a second source is a
+	 * dashboard that eventually disagrees with the document it describes. */
+
+	const itemLabels = items.map(row => (typeof row.material === 'string' ? row.material : '—'))
+	const netValues = items.map(netValueOf)
+
+	/* A running total down the item list: how the order's value builds up, and which
+	 * line takes it past whatever the approval threshold is. */
+	const cumulativeValues = runningTotals(netValues)
+
+	const valueByGroup = items.reduce<Map<string, number>>((totals, row) => {
+		const group = materialGroupOf(row)
+
+		totals.set(group, (totals.get(group) ?? 0) + netValueOf(row))
+
+		return totals
+	}, new Map())
+
+	const groupSlices: ChartSlice[] = [...valueByGroup]
+		/* Largest first. Comparing two similar arcs is hard enough without them
+		 * sitting on opposite sides of the circle. */
+		.sort(([, left], [, right]) => right - left)
+		.map(([group, value]) => ({ key: group, label: group, value }))
 
 	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault()
@@ -352,7 +428,7 @@ function PurchaseOrderScreen() {
 
 					<FormSection
 						title="Items"
-						description="Click a heading to sort. Drag a column or row edge to resize, double-click it to reset. Copy a range straight into Excel, or paste a block back in."
+						description="Click a heading to sort. Drag a column or row edge to resize, double-click it to reset — widen past the card and the grid scrolls. Hold shift, or press and hold, to select a range. Copy it straight into Excel, or paste a block back in."
 					>
 						{changedCount > 0 && (
 							<MessageStrip valueState="warning" isLive>
@@ -376,6 +452,52 @@ function PurchaseOrderScreen() {
 							canGrowOnPaste
 							maxBodyHeight="15rem"
 						/>
+					</FormSection>
+
+					<FormSection
+						title="Analysis"
+						description="Read straight off the item table above — edit a quantity and all three move."
+					>
+						{/* One series, so no legend: a key explaining a single colour is
+						  * furniture. The caption already says what the bars are. */}
+						<BarChart
+							caption="Net value by item"
+							categories={itemLabels}
+							series={[{ key: 'net', label: 'Net value', values: netValues }]}
+							legendPlacement="none"
+							height={200}
+							formatValue={value => EURO.format(value)}
+							categoryHeader="Material"
+						/>
+
+						<div className="po-chart-pair">
+							{/* An area, and only one series — two filled areas would hide
+							  * one another. A running total is exactly the shape an area
+							  * suits: the fill is the value accumulated so far. */}
+							<LineChart
+								caption="Cumulative net value"
+								categories={itemLabels}
+								series={[{ key: 'cumulative', label: 'Running total', values: cumulativeValues }]}
+								isArea
+								hasMarkers
+								legendPlacement="none"
+								height={200}
+								formatValue={value => EURO.format(value)}
+								categoryHeader="Material"
+							/>
+
+							{/* Four or five groups, which is what a donut is for. The legend
+							  * beside it carries each group's value and share, since neither
+							  * can be read off an arc. */}
+							<DonutChart
+								caption="Share by material group"
+								slices={groupSlices}
+								totalLabel="Net total"
+								height={200}
+								formatValue={value => EURO.format(value)}
+								categoryHeader="Material group"
+							/>
+						</div>
 					</FormSection>
 
 					<FormSection title="Shipping and output">
@@ -442,7 +564,7 @@ function PurchaseOrderScreen() {
 
 						{/* Logo as a node, so it inherits the button's white text
 						  * colour. An <img> could not. */}
-						<Button variant="negative" logo={<DeleteIcon />}>
+						<Button variant="negative" logo={<DeleteIcon />} onClick={() => setIsDeleteOpen(true)}>
 							Delete
 						</Button>
 
@@ -458,6 +580,53 @@ function PurchaseOrderScreen() {
 					</FormActions>
 				</Form>
 			</div>
+
+			{/* Outside the <Form> on purpose. A dialog renders in the browser's top
+			  * layer so it makes no visual difference, but nesting a form's worth of
+			  * controls inside another form's element tree is the sort of thing that
+			  * ends with Enter submitting the wrong one.
+			  *
+			  * The children here are the point: a message strip and a whole DataGrid,
+			  * which the modal knows nothing about. It owns the frame, the header, the
+			  * footer and the behaviour, and has no opinion on what goes between them. */}
+			<Modal
+				isOpen={isDeleteOpen}
+				onClose={() => setIsDeleteOpen(false)}
+				title="Delete purchase order 4500001827?"
+				description={`All ${items.length} items are removed. This cannot be undone.`}
+				size="large"
+				footer={
+					<>
+						<Button variant="transparent" onClick={() => setIsDeleteOpen(false)}>
+							Cancel
+						</Button>
+
+						{/* Not autofocused. A dialog that deletes on one press of Enter is
+						  * a data-loss bug with a confirmation step bolted on. */}
+						<Button variant="negative" logo={<DeleteIcon />} onClick={() => setIsDeleteOpen(false)}>
+							Delete order
+						</Button>
+					</>
+				}
+			>
+				<MessageStrip valueState="warning">
+					Goods receipts already posted against this order stay in place and will need to be
+					reversed separately.
+				</MessageStrip>
+
+				<DataGrid
+					caption="Items to be deleted"
+					columns={ITEM_COLUMNS}
+					rows={items}
+					getRowId={row => String(row.item)}
+					isReadOnly
+					maxBodyHeight="12rem"
+				/>
+
+				<p className="po-modal-total">
+					Net total <strong>{EURO.format(netValues.reduce((total, value) => total + value, 0))}</strong>
+				</p>
+			</Modal>
 		</div>
 	)
 }

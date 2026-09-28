@@ -1,0 +1,157 @@
+/* =============================================================================
+ * Base document styles
+ * =============================================================================
+ *
+ * Bare element defaults, so an unstyled `<h2>`, `<a>` or `<button>` already
+ * belongs to the house rather than to the browser. Nothing here has a class
+ * selector — it is all element and pseudo-class rules — which is the line that
+ * separates this file from a component stylesheet.
+ *
+ * Two of these rules are load-bearing for components elsewhere in this folder,
+ * and worth knowing about before deleting anything:
+ *
+ * - **`:focus-visible`** is the app's only focus ring. Components that need it
+ *   inset rather than outset (a full-bleed sidebar row, a grid header) override
+ *   `outline-offset` and rely on this for the colour and width.
+ * - **The `prefers-reduced-motion` reset** is global, so no component honours the
+ *   preference individually. `Modal`'s open animation and the grid's transitions
+ *   are both switched off here and nowhere else.
+ *
+ * -----------------------------------------------------------------------------
+ * This file is the optional one
+ * -----------------------------------------------------------------------------
+ * `tokens.css` is required — every component stylesheet reads those variables.
+ * This file is opinionated about `body`, headings and links, which an application
+ * with its own reset may already own. If you are dropping this library into such
+ * an app, `styles/index.css` is the place to leave it out; keep the
+ * `:focus-visible` and reduced-motion rules, which the components assume.
+ * ---------------------------------------------------------------------------*/
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+}
+
+body {
+	margin: 0;
+	min-height: 100vh;
+	background: var(--color-bg);
+	color: var(--color-text);
+	font-family: var(--font-sans);
+	font-size: var(--text-md);
+	line-height: var(--leading-normal);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
+}
+
+/* --- Headings: bold and tight, so hierarchy reads without per-screen rules --- */
+h1, h2, h3, h4, h5, h6 {
+	margin-top: 0;
+	color: var(--color-text);
+	font-weight: var(--weight-bold);
+	line-height: var(--leading-tight);
+	letter-spacing: var(--tracking-tight);
+}
+
+h1 { font-size: var(--text-2xl); }
+h2 { font-size: var(--text-xl); }
+h3 { font-size: var(--text-lg); }
+h4, h5, h6 { font-size: var(--text-md); }
+
+/* Links carry the interaction blue and no underline at rest — the colour is
+ * doing the marking, and in Fiori that colour means one thing everywhere.
+ * The underline arrives on hover and focus so the affordance is still
+ * confirmed by something other than hue. */
+a {
+	color: var(--color-link);
+	text-decoration: none;
+	text-underline-offset: 2px;
+	font-weight: var(--weight-normal);
+}
+
+a:hover,
+a:focus-visible {
+	text-decoration: underline;
+	text-decoration-thickness: 1px;
+}
+
+/* --- Buttons -----------------------------------------------------------------
+ * A baseline only, so a bare <button> — a modal's Cancel, say — is already a
+ * house button rather than an OS one. The full variant set lives on the
+ * <Button> component in ../form; this rule is what that component's classes
+ * override.
+ *
+ * The standard Fiori button is white with a grey border and a BLUE label. That
+ * is the whole trick behind "clean but easy to tell apart": a screen can carry
+ * a dozen of these without a single filled block on it, and the one filled
+ * blue button on the screen is unmistakably the thing to press. */
+button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-2);
+	min-height: var(--control-height);
+	padding: 0 var(--space-3);
+	font: inherit;
+	font-size: var(--text-md);
+	font-weight: var(--weight-semibold);
+	color: var(--color-primary-hover);
+	background: var(--color-surface);
+	border: 1px solid var(--color-border-strong);
+	border-radius: var(--radius-md);
+	cursor: pointer;
+	transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+button:hover {
+	background: var(--color-chrome-hover);
+}
+
+button:active {
+	background: var(--color-primary-soft);
+	border-color: var(--color-primary-hover);
+}
+
+/* `:not(.form-button)` matters. A pseudo-class pushes this rule to the same
+ * specificity as the component's single-class variant rules and the later of the
+ * two then wins on every property this sets — so a disabled *emphasized* button
+ * would take the grey-on-white below instead of a faded blue. The <Button>
+ * component owns its own disabled state; this is only for a bare <button>. */
+button:disabled:not(.form-button) {
+	color: var(--color-text-subtle);
+	background: var(--color-surface);
+	border-color: var(--color-border);
+	cursor: not-allowed;
+}
+
+/* A solid 2px navy ring, darker than the brand blue so a control that is
+ * focused *and* hovered still reads as focused.
+ *
+ * The one focus style in the library. Components never redeclare the colour or
+ * the width — the few that need the ring drawn inside their own box override
+ * `outline-offset` alone, so changing the ring here changes it everywhere. */
+:focus-visible {
+	outline: 2px solid var(--color-focus-ring);
+	outline-offset: 2px;
+}
+
+/* Honour a reduced-motion preference globally rather than per component.
+ *
+ * Every transition and animation in this library is switched off by this one
+ * rule, which is why none of the component stylesheets carry their own
+ * prefers-reduced-motion block. Remove it and they all animate unconditionally. */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+}

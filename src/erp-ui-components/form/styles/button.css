@@ -1,0 +1,249 @@
+﻿/* =============================================================================
+ * Button — the five variants
+ * =============================================================================
+ *
+ *   button.form-button.form-button-{variant}
+ *     span.form-button-logo | span.form-button-spinner
+ *     span.form-button-label
+ *
+ * A file of its own because `Button` is the one control here that is not a field:
+ * it has no label, no hint and no value state, so it shares none of the
+ * `--field-*` system that `field.css` sets up. What it does share is
+ * `--control-height`, which is why a button inside `<Form density="compact">`
+ * shrinks without being told.
+ *
+ * The variants are ordered quietest to loudest, and each one is a fill, a border
+ * and a text colour — nothing else moves, so a row of mixed variants still lines
+ * up. The `:disabled` rules deliberately keep each variant's own hue rather than
+ * turning everything grey, because a faded blue button still reads as the primary
+ * action that is currently unavailable.
+ * ---------------------------------------------------------------------------*/
+/* ---------------------------------------------------------------------------
+ * Buttons
+ * -------------------------------------------------------------------------*/
+
+/* Overrides the bare <button> baseline in index.css. Class selectors outrank
+ * the element selector there, so nothing needs !important.
+ *
+ * The variants are ordered by loudness on purpose: transparent, default, then
+ * the three filled ones. A screen should read as one filled button and however
+ * many quiet ones it needs. */
+
+.form-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	column-gap: var(--space-2);
+
+	min-height: var(--control-height);
+	padding: 0 var(--space-3);
+
+	font-family: inherit;
+	font-size: var(--text-md);
+	font-weight: var(--weight-semibold);
+	line-height: var(--leading-tight);
+
+	border: 1px solid transparent;
+	border-radius: var(--radius-md);
+	cursor: pointer;
+
+	/* A button in a toolbar should not be stretched by its flex parent, and its
+	 * label should not wrap mid-word. */
+	flex-shrink: 0;
+	white-space: nowrap;
+
+	transition: background-color var(--transition-fast), border-color var(--transition-fast),
+		color var(--transition-fast);
+}
+
+.form-button-compact {
+	min-height: var(--control-height-compact);
+	padding: 0 var(--space-2);
+	font-size: var(--text-sm);
+}
+
+.form-button-full-width {
+	width: 100%;
+}
+
+/* Square, so a lone icon is optically centred rather than sitting in a wide
+ * pill. The min-width is what stops it collapsing to the icon's width. */
+.form-button-icon-only {
+	min-width: var(--control-height);
+	padding: 0;
+}
+
+.form-button-compact.form-button-icon-only {
+	min-width: var(--control-height-compact);
+}
+
+.form-button:disabled {
+	cursor: not-allowed;
+
+	/* Fades whatever the variant painted, rather than each variant having to
+	 * declare its own disabled colours. Below the WCAG contrast minimum, which
+	 * 1.4.3 permits for a disabled control. */
+	opacity: 0.4;
+}
+
+/* --- Default: white, grey border, blue label ---
+ * The workhorse. A screen can carry a dozen of these with no filled block on
+ * it, which is what leaves the one filled button unmistakable. */
+.form-button-default {
+	color: var(--color-primary-hover);
+	background-color: var(--color-surface);
+	border-color: var(--color-border-strong);
+}
+
+.form-button-default:hover:not(:disabled) {
+	background-color: var(--color-chrome-hover);
+}
+
+.form-button-default:active:not(:disabled) {
+	background-color: var(--color-primary-soft);
+	border-color: var(--color-primary-hover);
+}
+
+/* --- Emphasized: the one action the screen is for ---
+ * Bold as well as filled, matching sapButton_Emphasized_FontFamily, which is
+ * SAP's bold face rather than the semibold the other buttons use. */
+.form-button-emphasized {
+	color: var(--color-on-primary);
+	background-color: var(--color-primary);
+	border-color: var(--color-primary);
+	font-weight: var(--weight-bold);
+}
+
+.form-button-emphasized:hover:not(:disabled) {
+	background-color: var(--color-primary-hover);
+	border-color: var(--color-primary-hover);
+}
+
+.form-button-emphasized:active:not(:disabled) {
+	background-color: var(--color-primary-active);
+	border-color: var(--color-primary-active);
+}
+
+/* --- Transparent: no border until hovered ---
+ * For toolbars and table rows, where a row of bordered buttons reads as a
+ * fence. It still has a 1px transparent border from .form-button, so nothing
+ * shifts by a pixel when the border appears on hover. */
+.form-button-transparent {
+	color: var(--color-primary-hover);
+	background-color: transparent;
+}
+
+.form-button-transparent:hover:not(:disabled) {
+	background-color: var(--color-chrome-hover);
+	border-color: var(--color-border-strong);
+}
+
+.form-button-transparent:active:not(:disabled) {
+	background-color: var(--color-primary-soft);
+	border-color: var(--color-primary-hover);
+}
+
+/* --- Positive and negative ---
+ * Filled, so they carry the same weight as emphasized. Reserved for actions
+ * with a consequence — post, release, delete — never used for decoration. */
+.form-button-positive {
+	color: var(--color-text-inverse);
+	background-color: var(--color-success);
+	border-color: var(--color-success);
+}
+
+.form-button-positive:hover:not(:disabled),
+.form-button-positive:active:not(:disabled) {
+	background-color: #1c5a2d;
+	border-color: #1c5a2d;
+}
+
+.form-button-negative {
+	color: var(--color-text-inverse);
+	background-color: var(--color-danger);
+	border-color: var(--color-danger);
+}
+
+.form-button-negative:hover:not(:disabled),
+.form-button-negative:active:not(:disabled) {
+	background-color: var(--color-danger-hover);
+	border-color: var(--color-danger-hover);
+}
+
+/* --- Logo ---
+ * 1rem square, matching sapContent_IconHeight. */
+.form-button-logo {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 1rem;
+	height: 1rem;
+}
+
+.form-button-logo img,
+.form-button-logo svg {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+/* An inline <svg> passed as a node inherits the button's text colour, so one
+ * icon works on a white button and on a filled blue one without a second
+ * asset. An <img> cannot do this — it paints its own fill — which is the
+ * reason Button accepts a node as well as a URL. */
+.form-button-logo svg {
+	fill: currentColor;
+}
+
+.form-button-label {
+	/* Keeps the label from being squeezed to nothing by a logo when the button
+	 * is in a tight flex row. */
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* --- Loading ---
+ * The spinner takes the logo's slot rather than being added beside it, so the
+ * button does not grow by an icon's width the moment it is pressed and shove
+ * the rest of the toolbar sideways. */
+.form-button-loading {
+	cursor: progress;
+}
+
+.form-button-spinner {
+	width: 1rem;
+	height: 1rem;
+	flex-shrink: 0;
+
+	/* Three sides of the ring in the button's own text colour and one left
+	 * transparent — that gap is what makes the rotation visible. */
+	border: 2px solid currentColor;
+	border-top-color: transparent;
+	border-radius: 50%;
+	opacity: 0.8;
+
+	animation: form-button-spin 600ms linear infinite;
+}
+
+@keyframes form-button-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+
+/* ---------------------------------------------------------------------------
+ * Forced colours (Windows high contrast)
+ * -------------------------------------------------------------------------*/
+
+/* Same reasoning as the disabled field in `field.css`: `opacity` is not a colour
+ * and survives forced-colours untouched, so a faded button stays faded and
+ * unreadable. `GrayText` is what the OS uses to say "unavailable". */
+@media (forced-colors: active) {
+	.form-button:disabled {
+		opacity: 1;
+		color: GrayText;
+	}
+}

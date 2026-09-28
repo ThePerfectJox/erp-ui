@@ -1,0 +1,45 @@
+/* =============================================================================
+ * The theme — load this once, before anything else
+ * =============================================================================
+ *
+ * ```css
+ * @import './erp-ui-components/styles/index.css';
+ * ```
+ * ```tsx
+ * import './erp-ui-components/styles/index.css'
+ * ```
+ *
+ * Every component stylesheet in this library reads the variables defined here.
+ * They do not import it themselves — a component that pulled in the whole theme
+ * would drag the tokens into the bundle once per component and make the cascade
+ * order depend on which component happened to be imported first. So this is the
+ * one file an application has to load, and it has to load first.
+ *
+ * The library barrel (`../index.ts`) imports it too, so `import { Button } from
+ * './erp-ui-components'` is enough on its own. Importing it explicitly from your
+ * entry point is still worth doing: it puts the theme at the head of the cascade
+ * regardless of which component the bundler decides to evaluate first.
+ *
+ * -----------------------------------------------------------------------------
+ * The three files, and which of them you can drop
+ * -----------------------------------------------------------------------------
+ * | File | Contains | Required |
+ * | --- | --- | --- |
+ * | `tokens.css` | `:root` custom properties, nothing else | **Yes.** Every stylesheet reads them. |
+ * | `base.css` | element defaults, focus ring, motion reset | Mostly. See below. |
+ * | `a11y.css` | the visually-hidden helper | **Yes.** Four components apply the class. |
+ *
+ * `base.css` is the only opinionated one — it styles `body`, headings, links and
+ * bare buttons, which an application with its own reset may already own. If you
+ * drop it, keep its `:focus-visible` and `prefers-reduced-motion` rules: the
+ * components assume both exist and declare neither themselves.
+ *
+ * Order matters and is not alphabetical. Tokens first because the other two read
+ * them; `a11y` last because its helper has to win against component rules, and
+ * the doubled selector it uses to do that is easier to reason about when nothing
+ * in this file comes after it.
+ * ---------------------------------------------------------------------------*/
+
+@import './tokens.css';
+@import './base.css';
+@import './a11y.css';

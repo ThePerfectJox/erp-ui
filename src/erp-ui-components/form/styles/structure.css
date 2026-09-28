@@ -1,0 +1,218 @@
+﻿/* =============================================================================
+ * Form structure — the shell, its groups, and the bars at either end
+ * =============================================================================
+ *
+ * Everything here styles the frame a form is built in rather than anything you
+ * type into:
+ *
+ *   form.form.form-labels-above.form-density-cozy
+ *     section.form-section
+ *       div.form-section-header > h3.form-section-title + p.form-section-description
+ *       div.form-section-body
+ *         div.form-row.form-row-2
+ *     div.form-actions
+ *     div.form-message-strip
+ *
+ * Two things in this file reach further than they look:
+ *
+ * - **`.form` seeds the `--field-*` variables.** Fields normally declare their
+ *   own, but a `<Button>` or a stray control outside a `.form-field` still needs
+ *   them to resolve. See `field.css` for what they do.
+ * - **`.form-density-compact` reassigns `--control-height`** for the subtree, so
+ *   every control sized from that token shrinks without being named here. That is
+ *   the whole density mechanism.
+ * ---------------------------------------------------------------------------*/
+/* ---------------------------------------------------------------------------
+ * Form shell
+ * -------------------------------------------------------------------------*/
+
+.form {
+	display: flex;
+	flex-direction: column;
+	row-gap: var(--space-6);
+
+	/* Fields declare `--field-*`, but a <Button> or a stray control that is not
+	 * inside a .form-field still needs them to resolve. Seeding the defaults on
+	 * the form means nothing renders unstyled just because it sits outside a
+	 * field. */
+	--field-fill: var(--color-surface-sunken);
+	--field-line: var(--color-field-border);
+	--field-line-width: 1px;
+}
+
+/* Compact density works by reassigning the global control height for this
+ * subtree. Everything sized from --control-height — inputs, selects, buttons,
+ * the switch — follows without being mentioned here. */
+.form-density-compact {
+	--control-height: var(--control-height-compact);
+}
+
+/* Caps field width without capping the form's own width, so section headings
+ * and message strips still run the full measure while the inputs under them
+ * stay scannable. */
+.form-narrow .form-field-control {
+	max-width: 32rem;
+}
+
+/* ---------------------------------------------------------------------------
+ * Sections
+ * -------------------------------------------------------------------------*/
+
+.form-section {
+	display: flex;
+	flex-direction: column;
+	row-gap: var(--space-4);
+}
+
+.form-section-header {
+	display: flex;
+	flex-direction: column;
+	row-gap: var(--space-1);
+
+	/* The rule under a section title is what turns a long form into a set of
+	 * named blocks. */
+	padding-bottom: var(--space-2);
+	border-bottom: 1px solid var(--color-border);
+}
+
+.form-section-title {
+	margin: 0;
+	color: var(--color-text);
+	font-size: var(--text-lg);
+	font-weight: var(--weight-bold);
+}
+
+.form-section-description {
+	margin: 0;
+	color: var(--color-text-muted);
+	font-size: var(--text-sm);
+}
+
+.form-section-body {
+	display: flex;
+	flex-direction: column;
+	row-gap: var(--space-4);
+}
+
+/* ---------------------------------------------------------------------------
+ * Rows
+ * -------------------------------------------------------------------------*/
+
+.form-row {
+	display: grid;
+
+	/* Wider than the row gap: fields side by side need to read as separate
+	 * fields, and a 1rem gutter is not enough once each one has a label. */
+	column-gap: var(--space-5);
+	row-gap: var(--space-4);
+
+	/* A grid item's min-width is auto, which lets a long <option> or an
+	 * unbreakable word push a column past its share and overflow the row.
+	 * minmax(0, 1fr) is what stops that. */
+	grid-template-columns: minmax(0, 1fr);
+}
+
+.form-row-2 {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-row-3 {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* One column on narrow screens, whatever the row asked for. Two labelled
+ * fields do not fit side by side on a phone. */
+@media (max-width: 767px) {
+	.form-row-2,
+	.form-row-3 {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+
+/* ---------------------------------------------------------------------------
+ * Action bar
+ * -------------------------------------------------------------------------*/
+
+.form-actions {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	column-gap: var(--space-2);
+	row-gap: var(--space-2);
+	padding-top: var(--space-4);
+	border-top: 1px solid var(--color-border);
+}
+
+/* Buttons are written in visual order and laid out in that order — never
+ * reversed with row-reverse, which would make the tab order run right-to-left
+ * while the buttons read left-to-right. That is the focus-order trap in
+ * WCAG 2.4.3. */
+.form-actions-start {
+	justify-content: flex-start;
+}
+
+.form-actions-end {
+	justify-content: flex-end;
+}
+
+.form-actions-space-between {
+	justify-content: space-between;
+}
+
+/* For long maintenance screens: Save stays reachable without scrolling to the
+ * end of a hundred fields. Opaque and shadowed, or the fields would show
+ * through as they scroll under it. */
+.form-actions-sticky {
+	position: sticky;
+	bottom: 0;
+	z-index: 1;
+	margin-top: var(--space-2);
+	padding-bottom: var(--space-4);
+	background-color: var(--color-surface);
+	box-shadow: var(--shadow-sm);
+}
+
+/* ---------------------------------------------------------------------------
+ * Message strip
+ * -------------------------------------------------------------------------*/
+
+/* A tinted block with a 4px bar down its leading edge. The bar is what makes
+ * the four states tell apart in greyscale — the tints are close in lightness by
+ * design, so that they stay quiet — together with the bold prefix the component
+ * renders as real text. */
+.form-message-strip {
+	padding: var(--space-3) var(--space-4);
+	border-radius: var(--radius-sm);
+	border-left: 4px solid;
+	font-size: var(--text-md);
+}
+
+.form-message-strip-prefix {
+	font-weight: var(--weight-bold);
+}
+
+.form-message-strip-error {
+	color: var(--color-danger);
+	background-color: var(--color-danger-soft);
+	border-left-color: var(--color-danger-border);
+}
+
+.form-message-strip-warning {
+	color: var(--color-warning);
+	background-color: var(--color-warning-soft);
+	border-left-color: var(--color-warning-border);
+}
+
+.form-message-strip-success {
+	color: var(--color-success);
+	background-color: var(--color-success-soft);
+	border-left-color: var(--color-success-border);
+}
+
+.form-message-strip-information {
+	color: var(--color-info);
+	background-color: var(--color-info-soft);
+	border-left-color: var(--color-info-border);
+}
+
