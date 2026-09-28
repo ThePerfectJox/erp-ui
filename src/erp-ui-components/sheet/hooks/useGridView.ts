@@ -9,8 +9,8 @@
  */
 
 import { useMemo, useState } from 'react'
-import { computeOrder, cycleSort } from '../core/gridSort'
-import type { GridSort } from '../core/gridSort'
+import { computeOrder, cycleSort } from '../../shared/sortRows'
+import type { SortState } from '../../shared/sortRows'
 import type { GridColumn, GridRow, GridViewRow } from '../core/types'
 
 export interface GridView {
@@ -26,7 +26,7 @@ export interface GridView {
 	 * order is stale, so the arrow disappears at the same moment the rows fall
 	 * back to document order rather than claiming a sort that is not applied.
 	 */
-	activeSort: GridSort | null
+	activeSort: SortState | null
 
 	/** Cycles this column: ascending, descending, back to document order. */
 	sortByColumn: (column: GridColumn) => void
@@ -52,7 +52,7 @@ interface UseGridViewOptions {
  * from this hook's own output.
  */
 export function useGridView({ rows }: UseGridViewOptions): GridView {
-	const [sort, setSort] = useState<GridSort | null>(null)
+	const [sort, setSort] = useState<SortState | null>(null)
 
 	/**
 	 * Source row indices in display order, or `null` for document order.

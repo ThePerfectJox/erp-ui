@@ -46,6 +46,7 @@
  * | `styles/` | design tokens, base element styles, the visually-hidden helper |
  * | `shared/` | primitives used by more than one folder |
  * | `form/` | twelve controls, the form shell, and the field system behind them |
+ * | `table/` | `ViewTable` — a read-only report table |
  * | `sheet/` | `DataGrid` — an Excel-like editable grid |
  * | `chart/` | bar, line and donut charts, drawn by hand in SVG |
  * | `overlay/` | `Modal`, built on the native `<dialog>` |
@@ -66,6 +67,21 @@
  * being reusable.
  *
  * -----------------------------------------------------------------------------
+ * Two tables, and which one you want
+ * -----------------------------------------------------------------------------
+ * `table/ViewTable` is for reading: rows sorted, sometimes ticked, clicked through to a
+ * detail screen. Cells can hold anything — a badge, a link, a button — and columns size
+ * themselves to their content.
+ *
+ * `sheet/DataGrid` is for editing: cells typed into, selected as ranges and copied to
+ * Excel, columns dragged to a width. Everything in a cell is text, because a cell you can
+ * type into has to be.
+ *
+ * If the user types into it, `DataGrid`. If they read it, `ViewTable`. They share their
+ * sort comparator (`shared/sortRows`) and nothing else, which is why they can sit on one
+ * screen without disagreeing about where the blank rows go.
+ *
+ * -----------------------------------------------------------------------------
  * A note on this barrel
  * -----------------------------------------------------------------------------
  * It re-exports everything, which is convenient and costs you tree-shaking
@@ -83,3 +99,4 @@ export * from './form'
 export * from './layout'
 export * from './overlay'
 export * from './sheet'
+export * from './table'

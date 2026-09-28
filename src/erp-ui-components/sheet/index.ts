@@ -50,5 +50,6 @@ export type { CellAddress, CellRange, CellSelection } from './core/gridSelection
 export { measureTableWidth, resizeTo, resolveColumnWidth, resolveRowHeight } from './core/gridSizing'
 export type { ColumnWidthOverrides, RowHeightOverrides } from './core/gridSizing'
 
-export { compareCellValues, computeOrder, cycleSort } from './core/gridSort'
-export type { CellComparator, GridSort, SortDirection } from './core/gridSort'
+/* Sorting is not re-exported here. `compareCellValues`, `computeOrder`, `cycleSort`
+ * and the `SortState` type live in `../shared/sortRows`, shared with `ViewTable`,
+ * and are exported from the library barrel. Import them from there. */

@@ -3,13 +3,13 @@
  *
  * Presentational. It is told whether it is sorted and which way; it does not
  * know what clicking will do next. The three-state cycle lives in
- * `core/gridSort.ts`, which is the only place that has to be read to know what
+ * `core/SortState.ts`, which is the only place that has to be read to know what
  * happens on the third click.
  */
 
 import type { ReactNode } from 'react'
 import { resolveAlign } from '../core/cellValue'
-import type { SortDirection } from '../core/gridSort'
+import type { SortDirection } from '../../shared/sortRows'
 import type { GridColumn } from '../core/types'
 
 interface GridHeaderCellProps {

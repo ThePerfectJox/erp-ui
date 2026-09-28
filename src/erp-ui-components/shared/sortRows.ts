@@ -1,19 +1,38 @@
 /**
- * Sorting for the grid.
+ * Sorting rows by a cell value.
  *
  * The output is always an **order**: an array of source row indices in display
  * position. The rows themselves are never moved.
  *
  * That matters more than it sounds. A document's item order is data — item 10
  * comes before item 20 — so sorting is a way of *looking* at the table, not an
- * edit to it. Keeping the order separate means `onChange` can hand back rows in
- * their original sequence however the user has the view sorted, and clicking a
- * header can never quietly rewrite the document.
+ * edit to it. Keeping the order separate means a grid's `onChange` can hand back
+ * rows in their original sequence however the user has the view sorted, and
+ * clicking a header can never quietly rewrite the document.
+ *
+ * -----------------------------------------------------------------------------
+ * Why this is in `shared/` rather than next to a table
+ * -----------------------------------------------------------------------------
+ * It started life as `sheet/core/SortState.ts`, and stayed there while `DataGrid`
+ * was the only thing that sorted. `ViewTable` sorts identically — same 1-2-5 of
+ * sorting decisions: mixed types need a total order, blanks sink to the bottom in
+ * both directions, equal values keep their document sequence — and two components
+ * in different folders needing the same logic is exactly the bar `shared/`
+ * documents for itself.
+ *
+ * The alternative was a second copy, and a second copy of a comparator is how two
+ * tables on one screen end up disagreeing about where the empty rows go.
  */
 
 export type SortDirection = 'asc' | 'desc'
 
-export interface GridSort {
+/**
+ * Which column is sorted and which way.
+ *
+ * Named for the state rather than for the grid, because both the editable grid and
+ * the read-only table hold one of these.
+ */
+export interface SortState {
 	columnKey: string
 	direction: SortDirection
 }
@@ -188,7 +207,7 @@ export function computeOrder<TRow>(
  * material there has to be a way back to item sequence, and reloading the screen
  * to get it is not a way.
  */
-export function cycleSort(current: GridSort | null, columnKey: string): GridSort | null {
+export function cycleSort(current: SortState | null, columnKey: string): SortState | null {
 	if (current?.columnKey !== columnKey) {
 		return { columnKey, direction: 'asc' }
 	}

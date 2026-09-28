@@ -10,7 +10,11 @@
  * - `clipboard` — the TSV and HTML flavours Excel actually reads and writes.
  * - `gridSelection` — selection rectangle geometry.
  * - `gridSizing` — column and row size arithmetic.
- * - `gridSort` — comparison and display order.
+ *
+ * Sorting is **not** here. It moved to `../../shared/sortRows` once `ViewTable`
+ * needed the same comparator, and it is imported from there directly rather than
+ * re-exported through this barrel — a barrel that forwards another folder's exports
+ * makes it impossible to tell, at the import site, which layer a thing belongs to.
  */
 
 export * from './types'
@@ -18,4 +22,3 @@ export * from './cellValue'
 export * from './clipboard'
 export * from './gridSelection'
 export * from './gridSizing'
-export * from './gridSort'

@@ -1,0 +1,479 @@
+/* =============================================================================
+ * ViewTable — read-only report table, Fiori surface
+ * =============================================================================
+ *
+ * Markup:
+ *
+ *   div.table-frame
+ *     p.table-caption > span.table-caption-count
+ *     div.table-scroll                 the scrollport; the header sticks to it
+ *       table.table.table-density-cozy.table-zebra
+ *         thead.table-head
+ *           th.table-select-cell       optional
+ *           th.table-header > button.table-sort-button
+ *         tbody
+ *           tr.table-row
+ *             td.table-select-cell
+ *             td.table-cell
+ *         tfoot.table-foot
+ *       p.table-empty                  when there are no rows
+ *   nav.table-pagination               a sibling, composed by the caller
+ *
+ * -----------------------------------------------------------------------------
+ * This is a web table, not a spreadsheet — and the CSS is where that shows
+ * -----------------------------------------------------------------------------
+ * `DataGrid.css` and this file look superficially alike and disagree on nearly every
+ * decision, deliberately:
+ *
+ * | | here | DataGrid |
+ * | --- | --- | --- |
+ * | `table-layout` | `auto` — columns size to content | `fixed` — declared pixel widths |
+ * | Vertical rules | none | every cell |
+ * | Row fill | zebra striping | plain, selection is the only fill |
+ * | Cursor | default, or pointer on a clickable row | `cell` |
+ * | Text selection | the browser's own | blocked, so drags select cells |
+ *
+ * The two that matter most:
+ *
+ * **`table-layout: auto`.** A report's columns should be as wide as their content — an
+ * order number column does not need the same width as a supplier name. Content-based
+ * sizing is what a hand-written HTML table does and it is right here. DataGrid cannot
+ * have it, because a draggable column needs a definite width for the drag arithmetic.
+ *
+ * **No vertical rules.** In a spreadsheet the cell is the unit you select, so its
+ * boundaries have to be visible. Here the *row* is the unit, so the horizontal rules are
+ * kept and the vertical ones dropped — which is the standard business-table look, and it
+ * stops a wide table reading as a cage.
+ * ---------------------------------------------------------------------------*/
+
+.table-frame {
+	display: flex;
+	flex-direction: column;
+	row-gap: var(--space-2);
+
+	/* Lets the table shrink inside a flex or grid parent instead of forcing it open. */
+	min-width: 0;
+}
+
+.table-caption {
+	margin: 0;
+	color: var(--color-text-muted);
+	font-size: var(--text-sm);
+	font-weight: var(--weight-semibold);
+}
+
+/* The row count. Lighter than the caption, so it reads as an aside rather than as part
+ * of the title. */
+.table-caption-count {
+	margin-left: var(--space-2);
+	color: var(--color-text-subtle);
+	font-weight: var(--weight-normal);
+	font-variant-numeric: tabular-nums;
+}
+
+/* The scrollport. Both axes, so a wide table scrolls sideways rather than squeezing its
+ * columns to nothing, and the sticky header below anchors to this box. */
+.table-scroll {
+	position: relative;
+	width: 100%;
+	overflow: auto;
+
+	/* Horizontal only. Reaching the right-hand end of a wide table must not hand the
+	 * gesture to the browser, where a trackpad swipe is "go back". Vertical chaining is
+	 * left alone so page scroll still continues past the end of the table. */
+	overscroll-behavior-x: contain;
+
+	background-color: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-sm);
+}
+
+.table {
+	/* Content-based column widths. See the header of this file. */
+	table-layout: auto;
+
+	/* Full width when the content is narrower than the container, so the table fills the
+	 * card it sits in rather than stopping short of it. `min-width` rather than `width`
+	 * so wide content can still push past it and scroll. */
+	min-width: 100%;
+
+	border-collapse: collapse;
+	font-size: var(--text-md);
+}
+
+/* ---------------------------------------------------------------------------
+ * Header
+ * -------------------------------------------------------------------------*/
+
+.table-head {
+	/* Above the rows, so they scroll underneath rather than over. */
+	position: sticky;
+	top: 0;
+	z-index: 1;
+}
+
+.table-header {
+	position: sticky;
+	top: 0;
+
+	/* No padding: the whole cell is the sort button, which carries the padding itself so
+	 * the entire heading is clickable rather than just the word in it. Unsortable
+	 * headings get it back below. */
+	padding: 0;
+
+	/* Opaque — the rows scroll under this. */
+	background-color: var(--color-surface-sunken);
+	color: var(--color-text-muted);
+	font-size: var(--text-sm);
+	font-weight: var(--weight-semibold);
+	text-align: start;
+	white-space: nowrap;
+
+	/* Drawn as a box-shadow rather than a border: a real border on a sticky element
+	 * scrolls away with its own box in some engines, leaving the header edge-less over
+	 * the content. */
+	box-shadow: inset 0 -1px 0 0 var(--color-border-strong);
+}
+
+/* An unsortable heading has no button to carry the padding for it, so it supplies its
+ * own — otherwise it sits flush against the cell edge while every sortable heading
+ * beside it is inset, and the row of headings looks ragged. */
+.table-header > .table-header-label {
+	display: block;
+	padding: var(--space-2) var(--space-3);
+}
+
+/* Overrides the <button> baseline in ../styles/base.css down to a transparent,
+ * full-bleed hit area. */
+.table-sort-button {
+	display: flex;
+	align-items: center;
+	justify-content: inherit;
+	column-gap: var(--space-1);
+	width: 100%;
+	min-height: 0;
+	padding: var(--space-2) var(--space-3);
+	background: none;
+	border: none;
+	border-radius: 0;
+	color: inherit;
+	font: inherit;
+	font-weight: inherit;
+	text-align: inherit;
+	cursor: pointer;
+}
+
+.table-sort-button:hover {
+	background-color: var(--color-chrome-hover);
+	color: var(--color-text);
+}
+
+.table-sort-button:focus-visible {
+	/* Inside, because a full-bleed cell's outward ring is clipped by the scrollport. The
+	 * colour and width come from the global rule in ../styles/base.css. */
+	outline-offset: -2px;
+}
+
+/* Right-aligned numeric headings put the arrow on the left of the label, which keeps it
+ * next to the digits it describes. `justify-content: inherit` above picks this up from
+ * the cell's text-align. */
+.table-header-label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* The direction arrow: a triangle from borders, so it needs no icon asset. Only the
+ * sorted column has a direction class, and the base class reserves the space so the
+ * headings do not shift by 8px as the sort moves between them. */
+.table-sort-arrow {
+	flex-shrink: 0;
+	width: 0;
+	height: 0;
+	margin-left: auto;
+	border-left: 4px solid transparent;
+	border-right: 4px solid transparent;
+}
+
+/* Points up for ascending — smallest at the top, which is where the arrow aims. */
+.table-sort-arrow-asc {
+	border-bottom: 5px solid var(--color-primary);
+}
+
+.table-sort-arrow-desc {
+	border-top: 5px solid var(--color-primary);
+}
+
+/* The sorted column is tinted, so it is findable without reading the arrow — useful on a
+ * wide table where the sorted column has scrolled out of view. */
+.table-header[aria-sort] {
+	background-color: var(--color-primary-soft);
+	color: var(--color-primary-active);
+}
+
+/* ---------------------------------------------------------------------------
+ * Rows and cells
+ * -------------------------------------------------------------------------*/
+
+.table-cell {
+	padding: var(--space-2) var(--space-3);
+	color: var(--color-text);
+
+	/* Horizontal rules only — the row is the unit here, not the cell. See the header of
+	 * this file. */
+	border-bottom: 1px solid var(--color-border);
+
+	/* Wraps by default, which is what a description column needs. A column that should
+	 * stay one line sets `isNoWrap`. */
+	vertical-align: top;
+}
+
+/* Amounts and quantities line up on their last digit only if the digits are all the same
+ * width. Applied to every cell rather than to numeric columns, because an id or a date in
+ * a text column benefits identically. */
+.table-cell,
+.table-foot .table-cell {
+	font-variant-numeric: tabular-nums;
+}
+
+.table-nowrap {
+	white-space: nowrap;
+}
+
+/* Zebra striping. The stripe is what stops the eye drifting to the wrong row between the
+ * first column and the last on a wide table, which is the one error a report cannot
+ * afford.
+ *
+ * `nth-child(even)` on the row, not a class per row: the component would otherwise have
+ * to know each row's parity, and that breaks the moment rows are filtered. */
+.table-zebra tbody .table-row:nth-child(even) {
+	background-color: var(--color-surface-alt);
+}
+
+/* Hover comes after the stripe so it wins on both odd and even rows. Only on tables whose
+ * rows do something — a highlight on a row that cannot be clicked is a promise the table
+ * does not keep. */
+.table-clickable-rows tbody .table-row {
+	cursor: pointer;
+}
+
+.table-clickable-rows tbody .table-row:hover {
+	background-color: var(--color-chrome-hover);
+}
+
+/* Selection wins over both the stripe and the hover: it is a state the user chose, and it
+ * has to stay visible while they move the pointer over the row to reach the checkbox. */
+.table-row-selected,
+.table-zebra tbody .table-row-selected:nth-child(even),
+.table-clickable-rows tbody .table-row-selected:hover {
+	background-color: var(--color-primary-soft);
+}
+
+/* ---------------------------------------------------------------------------
+ * Selection column
+ * -------------------------------------------------------------------------*/
+
+/* Sized to the control and nothing more. `width: 1%` with `white-space: nowrap` is the
+ * old trick for "as narrow as the content allows" under `table-layout: auto` — the
+ * browser gives an over-constrained column its minimum content width. */
+.table-select-cell {
+	width: 1%;
+	padding: var(--space-2) var(--space-3);
+	white-space: nowrap;
+	border-bottom: 1px solid var(--color-border);
+	vertical-align: middle;
+}
+
+.table-head .table-select-cell {
+	background-color: var(--color-surface-sunken);
+	border-bottom: none;
+	box-shadow: inset 0 -1px 0 0 var(--color-border-strong);
+}
+
+/* A native checkbox or radio, tinted.
+ *
+ * `accent-color` is the whole styling, and that is the point: the form folder's
+ * `.form-checkbox` is drawn by hand because a field's fill and underline have to match
+ * every other field on the screen, and borrowing it here would make this folder depend on
+ * `Form.css` being loaded — silently, with an unstyled checkbox as the only symptom.
+ *
+ * A row selector has no such obligation, so the native control plus the brand colour is
+ * the right amount of work. It also inherits the OS's own focus ring and indeterminate
+ * rendering for free, both of which the custom one has to reimplement. */
+.table-select-control {
+	width: 1rem;
+	height: 1rem;
+	margin: 0;
+	accent-color: var(--color-primary);
+	cursor: pointer;
+}
+
+/* ---------------------------------------------------------------------------
+ * Footer
+ * -------------------------------------------------------------------------*/
+
+/* A summary, so it reads as a conclusion rather than as one more row: bold, a heavier top
+ * rule, and no bottom border to sit above. Sticky to the bottom of the scrollport, so a
+ * total stays visible while the rows above it scroll. */
+.table-foot {
+	position: sticky;
+	bottom: 0;
+	background-color: var(--color-surface-sunken);
+	font-weight: var(--weight-bold);
+}
+
+.table-foot .table-cell {
+	border-bottom: none;
+	box-shadow: inset 0 1px 0 0 var(--color-border-strong);
+}
+
+/* ---------------------------------------------------------------------------
+ * Empty and loading
+ * -------------------------------------------------------------------------*/
+
+.table-empty {
+	margin: 0;
+	padding: var(--space-6) var(--space-5);
+	color: var(--color-text-muted);
+	font-size: var(--text-sm);
+	text-align: center;
+}
+
+/* A grey bar in the shape of the text that is coming, so the table does not jump when the
+ * data arrives. */
+.table-skeleton-bar {
+	display: block;
+	height: 0.75em;
+	background-color: var(--color-border);
+	border-radius: var(--radius-sm);
+
+	/* A slow pulse, so it reads as "working" rather than as a rendering fault. Switched
+	 * off by the global prefers-reduced-motion rule in ../styles/base.css, which leaves a
+	 * static grey bar — still a perfectly good placeholder. */
+	animation: table-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes table-skeleton-pulse {
+	0%,
+	100% {
+		opacity: 1;
+	}
+
+	50% {
+		opacity: 0.45;
+	}
+}
+
+.table-row-skeleton {
+	/* Never striped or hoverable: there is nothing there to point at yet. */
+	background-color: transparent !important;
+	cursor: default !important;
+}
+
+/* ---------------------------------------------------------------------------
+ * Density
+ * -------------------------------------------------------------------------*/
+
+/* Compact is for a table inside a dialog or a dense screen. It changes the padding only —
+ * not the type size, which would take the text below the 14px business-screen base and
+ * make the table harder to read rather than merely smaller. */
+.table-density-compact .table-cell,
+.table-density-compact .table-select-cell,
+.table-density-compact .table-sort-button,
+.table-density-compact .table-header > .table-header-label {
+	padding-top: var(--space-1);
+	padding-bottom: var(--space-1);
+}
+
+/* ---------------------------------------------------------------------------
+ * Responsive column hiding
+ * -------------------------------------------------------------------------*/
+
+/* Deciding which columns stop mattering, rather than letting all of them shrink until
+ * none is readable. The table still scrolls sideways, so a hidden column is a statement
+ * about what should be visible without scrolling — not about what is reachable. */
+@media (max-width: 599px) {
+	.table-hide-below-sm {
+		display: none;
+	}
+}
+
+@media (max-width: 899px) {
+	.table-hide-below-md {
+		display: none;
+	}
+}
+
+/* ---------------------------------------------------------------------------
+ * Pagination
+ * -------------------------------------------------------------------------*/
+
+.table-pagination {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-2) var(--space-4);
+	padding-top: var(--space-1);
+}
+
+.table-pagination-range {
+	margin: 0;
+	color: var(--color-text-muted);
+	font-size: var(--text-sm);
+	font-variant-numeric: tabular-nums;
+}
+
+.table-pagination-controls {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+}
+
+.table-pagination-page {
+	color: var(--color-text-muted);
+	font-size: var(--text-sm);
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+/* Compact and quiet. A pager is navigation, and giving it the weight of a house button
+ * would put it in competition with the screen's actual actions. */
+.table-pagination-button {
+	min-height: var(--control-height-compact);
+	padding: 0 var(--space-3);
+	font-size: var(--text-sm);
+}
+
+/* ---------------------------------------------------------------------------
+ * Forced colours (Windows high contrast)
+ * -------------------------------------------------------------------------*/
+
+/* Every fill in this file is a colour the OS replaces, so the stripe, the hover and the
+ * selection all collapse into one. The selection falls back to the system's own
+ * selection pair, and the borders — which do survive — carry the rest. */
+@media (forced-colors: active) {
+	.table-row-selected,
+	.table-zebra tbody .table-row-selected:nth-child(even),
+	.table-clickable-rows tbody .table-row-selected:hover {
+		background-color: Highlight;
+		color: HighlightText;
+	}
+
+	.table-header[aria-sort] {
+		background-color: Highlight;
+		color: HighlightText;
+	}
+
+	/* The arrow is drawn in brand blue, which the OS discards. */
+	.table-sort-arrow-asc {
+		border-bottom-color: CanvasText;
+	}
+
+	.table-sort-arrow-desc {
+		border-top-color: CanvasText;
+	}
+
+	.table-skeleton-bar {
+		background-color: GrayText;
+	}
+}

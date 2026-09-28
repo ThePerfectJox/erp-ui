@@ -8,7 +8,7 @@
  * and its CSS along behind a type-only import.
  */
 
-import type { CellComparator } from './gridSort'
+import type { CellComparator } from '../../shared/sortRows'
 
 /** A row of data, keyed by column key. */
 export type GridRow = Record<string, unknown>

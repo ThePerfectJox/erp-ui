@@ -25,6 +25,8 @@ import type { ChartSlice } from './erp-ui-components/chart'
 import { Modal } from './erp-ui-components/overlay'
 import { DataGrid } from './erp-ui-components/sheet'
 import type { GridColumn, GridRow, RowChangeKind } from './erp-ui-components/sheet'
+import { TablePagination, ViewTable, useTablePagination } from './erp-ui-components/table'
+import type { TableColumn, TableRow } from './erp-ui-components/table'
 import './PurchaseOrderScreen.css'
 
 /* Inline icons, for the buttons whose logo has to follow the button's own text
@@ -193,6 +195,74 @@ const INITIAL_ITEMS: GridRow[] = [
 	{ item: 60, material: 'R-2201', description: 'Aluminium coil 0.8mm', quantity: 400, unit: 'KG', price: 4.62 },
 ]
 
+/* --- The read-only side: goods receipts posted against this order ----------
+ * A report rather than a document. Nothing here is editable — the receipts are posted
+ * facts — so it is a ViewTable rather than a DataGrid, and the cells can hold things a
+ * grid cell cannot: a status badge and a link to the material. */
+
+type ReceiptStatus = 'posted' | 'reversed' | 'blocked'
+
+const RECEIPT_STATUS_LABELS: Record<ReceiptStatus, string> = {
+	posted: 'Posted',
+	reversed: 'Reversed',
+	blocked: 'Blocked',
+}
+
+/**
+ * A status as a badge rather than as a word.
+ *
+ * The case `TableColumn.render` exists for. Note it carries a real text label and not
+ * only a colour — a row a user cannot distinguish in greyscale is a row they will
+ * misread.
+ */
+function StatusBadge({ status }: { status: ReceiptStatus }) {
+	return <span className={`po-badge po-badge-${status}`}>{RECEIPT_STATUS_LABELS[status]}</span>
+}
+
+const RECEIPT_COLUMNS: TableColumn[] = [
+	{
+		key: 'document',
+		header: 'Receipt',
+		isNoWrap: true,
+		/* A link, which is also what makes the table keyboard-navigable: `onRowClick` is a
+		 * pointer shortcut and this is the accessible route to the same place. */
+		render: row => <a href={`#/goods-receipts/${String(row.document)}`}>{String(row.document)}</a>,
+	},
+	{ key: 'postedOn', header: 'Posted', isNoWrap: true },
+	{ key: 'material', header: 'Material', isNoWrap: true },
+	/* Dropped first on a narrow screen: it repeats what the material number already says
+	 * to anyone reading this screen. */
+	{ key: 'description', header: 'Description', hideBelow: 'md' },
+	{ key: 'quantity', header: 'Quantity', type: 'number' },
+	{ key: 'unit', header: 'Unit', hideBelow: 'sm' },
+	{
+		key: 'status',
+		header: 'Status',
+		width: '7rem',
+		render: row => <StatusBadge status={row.status as ReceiptStatus} />,
+		/* Sorts by workflow stage, not alphabetically — "blocked" before "posted" before
+		 * "reversed" is meaningless, whereas most-urgent-first is not. Without this the
+		 * column would sort on the raw value, which the badge has hidden. */
+		sortValue: row => ['blocked', 'posted', 'reversed'].indexOf(String(row.status)),
+	},
+	{ key: 'value', header: 'Value', type: 'number', format: value => EURO.format(Number(value ?? 0)) },
+]
+
+const RECEIPTS: TableRow[] = [
+	{ document: '5000012001', postedOn: '24.09.2026', material: 'R-1104', description: 'Steel sheet 2mm', quantity: 40, unit: 'EA', status: 'posted', value: 736 },
+	{ document: '5000012002', postedOn: '24.09.2026', material: 'H-4010', description: 'Hex bolt M8×40', quantity: 1200, unit: 'EA', status: 'posted', value: 168 },
+	{ document: '5000012003', postedOn: '25.09.2026', material: 'H-4012', description: 'Washer M8', quantity: 1200, unit: 'EA', status: 'posted', value: 36 },
+	{ document: '5000012004', postedOn: '25.09.2026', material: 'P-8800', description: 'Powder coat, signal white', quantity: 8, unit: 'L', status: 'blocked', value: 252 },
+	{ document: '5000012005', postedOn: '26.09.2026', material: 'C-0451', description: 'Pallet, Euro', quantity: 18, unit: 'EA', status: 'posted', value: 229.5 },
+	{ document: '5000012006', postedOn: '26.09.2026', material: 'R-2201', description: 'Aluminium coil 0.8mm', quantity: 200, unit: 'KG', status: 'posted', value: 924 },
+	{ document: '5000012007', postedOn: '27.09.2026', material: 'R-1104', description: 'Steel sheet 2mm', quantity: 40, unit: 'EA', status: 'reversed', value: 736 },
+	{ document: '5000012008', postedOn: '27.09.2026', material: 'H-4010', description: 'Hex bolt M8×40', quantity: 600, unit: 'EA', status: 'posted', value: 84 },
+	{ document: '5000012009', postedOn: '28.09.2026', material: 'P-8800', description: 'Powder coat, signal white', quantity: 8, unit: 'L', status: 'posted', value: 252 },
+	{ document: '5000012010', postedOn: '28.09.2026', material: 'R-2201', description: 'Aluminium coil 0.8mm', quantity: 100, unit: 'KG', status: 'blocked', value: 462 },
+	{ document: '5000012011', postedOn: '28.09.2026', material: 'R-1104', description: 'Steel sheet 2mm', quantity: 40, unit: 'EA', status: 'posted', value: 736 },
+	{ document: '5000012012', postedOn: '28.09.2026', material: 'H-4012', description: 'Washer M8', quantity: 1200, unit: 'EA', status: 'posted', value: 36 },
+]
+
 const PRIORITIES = [
 	{ value: 'standard', label: 'Standard', description: 'Ships within 5 working days.' },
 	{ value: 'express', label: 'Express', description: 'Next working day. Surcharge applies.' },
@@ -239,6 +309,21 @@ function PurchaseOrderScreen() {
 	/* The modal is controlled from here, which is the point of `isOpen`/`onClose`:
 	 * the dialog asks to close and this screen decides. */
 	const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+
+	/* --- the read-only receipts table -------------------------------------- */
+	const [selectedReceipts, setSelectedReceipts] = useState<string[]>([])
+
+	/* Paging lives here rather than inside the table, which is what lets the same
+	 * component serve this twelve-row list and a fifty-thousand-row one paged on a
+	 * server. */
+	const receiptPager = useTablePagination({ totalRows: RECEIPTS.length, pageSize: 5 })
+
+	const receiptPage = receiptPager.slice(RECEIPTS)
+
+	/* Totalled over the page on screen, not over all twelve rows, so the figure agrees
+	 * with the rows above it. A footer that summed the whole list while showing five rows
+	 * is the kind of discrepancy that gets blamed on the database. */
+	const receiptPageValue = receiptPage.reduce((total, row) => total + Number(row.value ?? 0), 0)
 
 	/* --- chart data, all derived from the grid's own rows -------------------
 	 * Nothing here is a separate copy of the data, so editing a quantity in the
@@ -498,6 +583,40 @@ function PurchaseOrderScreen() {
 								categoryHeader="Material group"
 							/>
 						</div>
+					</FormSection>
+
+					<FormSection
+						title="Goods receipts"
+						description="Posted facts, so nothing here is editable. Click a heading to sort, tick rows to act on them."
+					>
+						{selectedReceipts.length > 0 && (
+							<MessageStrip valueState="information" isLive>
+								{selectedReceipts.length === 1
+									? '1 receipt selected.'
+									: `${selectedReceipts.length} receipts selected.`}{' '}
+								Reversal and printing would act on the selection.
+							</MessageStrip>
+						)}
+
+						<ViewTable
+							caption="Goods receipts for this order"
+							hasRowCount
+							columns={RECEIPT_COLUMNS}
+							rows={receiptPage}
+							getRowId={row => String(row.document)}
+							/* Without this every checkbox is announced as "Select row 3", which
+							 * is not something a user can act on. */
+							getRowLabel={row => `receipt ${String(row.document)}`}
+							selectionMode="multiple"
+							selectedRowIds={selectedReceipts}
+							onSelectionChange={setSelectedReceipts}
+							defaultSort={{ columnKey: 'postedOn', direction: 'desc' }}
+							footerRow={{ description: 'Page total', value: EURO.format(receiptPageValue) }}
+							density="compact"
+							emptyText="No goods receipts have been posted against this order yet."
+						/>
+
+						<TablePagination {...receiptPager} rowNoun="receipts" />
 					</FormSection>
 
 					<FormSection title="Shipping and output">
