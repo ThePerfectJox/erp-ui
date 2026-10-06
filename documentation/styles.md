@@ -1,152 +1,256 @@
-# `styles/` — the theme
+# Styles (the theme)
 
-The library's entire global stylesheet. Everything visual in `erp-ui` reads
-from the design tokens defined here.
+## What it is
+
+`styles/` is the library's global stylesheet: the design tokens every
+component reads, a few base element styles, and one accessibility helper
+class. The theme is a light-mode SAP Fiori "Morning Horizon" look at a 14px
+base size, but the token names are generic (`--color-primary`, not
+`--sapBrandColor`), so you can swap in any palette.
+
+| File | Contains |
+| --- | --- |
+| `tokens.css` | All design tokens, as custom properties on `:root`. Values only, no selectors. |
+| `base.css` | Element defaults: box-sizing, `body`, headings, links, bare `<button>`s, the focus ring, reduced motion. |
+| `a11y.css` | `.erp-visually-hidden` |
+| `index.css` | Imports the three above, in that order. |
+
+## How to use it
+
+Import it once, at the top of your entry file:
 
 ```tsx
 import './erp-ui-components/styles/index.css'
 ```
 
-Load it once, from your entry point, before anything else. Component
-stylesheets do not import it themselves — a component that pulled in the whole
-theme would drag the tokens into the bundle once per component and make the
-cascade order depend on which component the bundler happened to evaluate first.
+Use the tokens in your own CSS so your screens match the components:
 
-## The three files
+```css
+.po-card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-5);
+}
 
-`styles/index.css` is just three `@import`s, in this order (which is not
-alphabetical, and matters):
+.po-eyebrow {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+```
 
-| File | Contains | Required |
-| --- | --- | --- |
-| `tokens.css` | `:root` custom properties, nothing else | **Yes.** Every stylesheet reads them. |
-| `base.css` | element defaults, focus ring, motion reset | Mostly — see below. |
-| `a11y.css` | the visually-hidden helper (`.erp-visually-hidden`) | **Yes.** Four components apply the class. |
+Use `.erp-visually-hidden` to hide text visually but keep it for screen
+readers:
 
-Tokens come first because the other two read them; `a11y` comes last because
-its helper has to win against component rules.
+```tsx
+<button><TrashIcon /><span className="erp-visually-hidden">Delete item 10</span></button>
+```
 
-`base.css` is the only opinionated file — it styles `body`, headings, links and
-bare `<button>`s, which an app with its own reset may already own. If you drop
-it, keep its `:focus-visible` and `prefers-reduced-motion` rules: the
-components assume both exist and declare neither themselves.
+### If your app already has a CSS reset
 
-## The design language: SAP Fiori "Morning Horizon"
+`base.css` styles `body`, headings, links and plain `<button>`s. If that
+conflicts with your own styles, you can import `tokens.css` and `a11y.css`
+directly instead of `index.css`. If you do, keep these two rules from
+`base.css` somewhere, because the components rely on them:
 
-`tokens.css` holds values and nothing else — no selectors beyond `:root`. That
-separation is what makes it swappable: to retheme the whole library, replace
-this one file and leave everything else alone.
+```css
+:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
 
-The values are taken from SAP's own `sap_horizon` theming base content, so the
-app reads as a Fiori application rather than a generic admin template. The token
-names stay generic (`--color-primary`, not `--sapBrandColor`) so the palette can
-be swapped for a non-SAP one without renaming anything downstream.
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+```
 
-Three rules do most of the work:
+Some components (the table's sort buttons, the pager, the sidebar) also build
+on `base.css`'s `<button>` reset, so check them if you drop it.
 
-1. **One blue means "you can act on this."** Links, the focus ring, the standard
-   button's label, the field underline on hover — all the same `#0070f2`
-   family. Nothing decorative is ever blue, so blue always means the same thing.
-2. **Fields are filled, not outlined.** An editable field is a grey box with a
-   darker line under it; the page behind it is lighter grey; cards are white. So
-   "where can I type" is answered by fill, at a glance. Read-only swaps the solid
-   underline for a dashed one and drops the fill — a difference that survives
-   greyscale and colour blindness.
-3. **State is never colour alone.** An invalid field gets a 2px underline, a
-   tinted fill *and* a message; a required field gets an asterisk (WCAG 1.4.1).
+## How to customize
+
+Override any token after the theme loads. See
+[customization.md](./customization.md) for global, scoped and dark-theme
+examples.
+
+```css
+:root {
+  --color-primary: #7c3aed;
+  --font-sans: "Inter", Arial, sans-serif;
+}
+```
+
+Or replace `tokens.css` with your own file defining the same names.
+
+### Design rules the defaults follow
+
+Keep these in mind when you change colours, so the UI still reads correctly:
+
+1. One blue means "you can act on this". Links, the focus ring, button labels
+   and field hover lines all use the primary family. Nothing decorative is
+   blue.
+2. Fields are filled, not outlined. A field (`--color-surface-sunken`) is
+   darker than the card (`--color-surface`), which is lighter than the page
+   (`--color-bg`). Keep that order.
+3. State is never shown by colour alone. Invalid fields also get a thicker
+   line and a message; required fields get an asterisk; changed grid rows get
+   a `*` or `+`.
+4. Red is only for errors and destructive actions. Required fields use
+   magenta (`--color-required`), and the chart palette has no red.
 
 ## Token reference
 
-### Brand / interaction
+### Brand and interaction
 
-| Token | Value | Role |
+| Token | Default | Used for |
 | --- | --- | --- |
-| `--color-primary` | `#0070f2` | the one interaction blue |
-| `--color-primary-hover` | `#0064d9` | also the link colour |
-| `--color-primary-active` | `#0058bf` | pressed |
-| `--color-primary-soft` | `#e1f4ff` | selected-row tint |
-| `--color-on-primary` | `#ffffff` | text on a filled brand button |
+| `--color-primary` | `#0070f2` | emphasized button, sort arrows, active grid cell, chart series 1 |
+| `--color-primary-hover` | `#0064d9` | hover, default button text |
+| `--color-primary-active` | `#0058bf` | pressed, sorted header text |
+| `--color-primary-soft` | `#e1f4ff` | selected rows and cells, sorted header |
+| `--color-primary-soft-hover` | `#cfe9ff` | selected + hovered |
+| `--color-primary-muted` | `#80b8f8` | disabled brand colour |
+| `--color-on-primary` | `#ffffff` | text on a filled primary button |
 
-### Semantic status
+### Secondary and tertiary
 
-Each state ships a text colour (dark enough to read on white) and an element
-colour (brighter, for borders and icons), so a message never has to choose
-between being legible and being visible.
+| Token | Default |
+| --- | --- |
+| `--color-secondary` | `#5b738b` |
+| `--color-secondary-hover` | `#46596d` |
+| `--color-secondary-soft` | `#eff1f2` |
+| `--color-on-secondary` | `#ffffff` |
+| `--color-tertiary` | `#6c32a9` |
+| `--color-tertiary-hover` | `#56287f` |
+| `--color-tertiary-soft` | `#f2e5ff` |
+| `--color-on-tertiary` | `#ffffff` |
 
-| State | Text | Border/element | Soft fill |
+These aren't used by the components for interaction. They're available for
+badges, meta text and accents in your own screens.
+
+### Status
+
+Each state has a text colour (readable on white), a border colour (for lines
+and icons) and a soft background.
+
+| State | Text | Border | Soft |
 | --- | --- | --- | --- |
-| success | `#256f3a` | `#2b7d42` | `#f5fae5` |
-| warning | `#b44f00` | `#dd6100` | `#fff8d6` |
-| danger | `#aa0808` | `#e90b0b` | `#ffeaf4` (pink, not peach) |
-| info | `#0064d9` | `#0070f2` | `#e1f4ff` |
+| success | `--color-success` `#256f3a` | `--color-success-border` `#2b7d42` | `--color-success-soft` `#f5fae5` |
+| warning | `--color-warning` `#b44f00` | `--color-warning-border` `#dd6100` | `--color-warning-soft` `#fff8d6` |
+| danger | `--color-danger` `#aa0808` | `--color-danger-border` `#e90b0b` | `--color-danger-soft` `#ffeaf4` |
+| info | `--color-info` `#0064d9` | `--color-info-border` `#0070f2` | `--color-info-soft` `#e1f4ff` |
 
-`--color-required` is `#ba066c` (magenta, not red) — SAP keeps red for things
-that are actually wrong, so a form full of required fields does not look like a
-form full of errors before it is touched.
+Also: `--color-danger-hover` `#8f0606` (negative button hover),
+`--color-neutral` `#788fa6`, `--color-neutral-soft` `#eff1f2`.
 
 ### Surfaces
 
-Four tones, and the order is load-bearing (rule 2 above trades on it) — never
-reorder these:
-
-| Token | Value | Use |
+| Token | Default | Used for |
 | --- | --- | --- |
-| `--color-surface` | `#ffffff` | cards, dialogs, tables (lightest) |
-| `--color-bg` | `#f5f6f7` | the canvas behind cards |
-| `--color-surface-alt` | `#f5f6f7` | zebra rows inside a white card |
-| `--color-surface-sunken` | `#eff1f2` | editable fields, wells (darkest) |
+| `--color-bg` | `#f5f6f7` | page background |
+| `--color-surface` | `#ffffff` | cards, dialogs, tables |
+| `--color-surface-alt` | `#f5f6f7` | zebra stripes, read-only grid cells |
+| `--color-surface-sunken` | `#eff1f2` | field fill, table headers |
 
-A field is always darker than the card it sits on, which is always lighter than
-the page.
+### Text
 
-### Text, lines and focus
+| Token | Default | Used for |
+| --- | --- | --- |
+| `--color-text` | `#131e29` | body text |
+| `--color-text-muted` | `#556b82` | labels, captions |
+| `--color-text-subtle` | `#758ca4` | hints, placeholders |
+| `--color-text-inverse` | `#ffffff` | text on dark fills |
+| `--color-link` | `var(--color-primary-hover)` | links |
 
-`--color-text` `#131e29`, `--color-text-muted` `#556b82` (labels),
-`--color-text-subtle` `#758ca4` (hints/placeholders). `--color-field-border`
-`#556b81` is much darker than the ordinary `--color-border` `#e5e5e5` because it
-is the underline that marks a field as editable. `--color-focus-ring` `#0032a5`
-is a darker navy than the brand blue, so a focused control still reads as focused
-while it is also hovered.
+### Lines and focus
 
-### Chart palette
+| Token | Default | Used for |
+| --- | --- | --- |
+| `--color-border` | `#e5e5e5` | hairlines, table rows |
+| `--color-border-strong` | `#bcc3ca` | button borders, frames, header lines |
+| `--color-field-border` | `#556b81` | field underline |
+| `--color-divider` | `#a8b3bd` | group dividers |
+| `--color-focus-ring` | `#0032a5` | keyboard focus outline |
+| `--color-required` | `#ba066c` | required asterisk |
 
-Eight categorical colours (`--chart-1` … `--chart-8`), used in order. The first
-five are literally tokens from above; the last three sit between them at a
-similar lightness so no series reads louder than its neighbours.
+### App chrome (sidebar)
 
-Two rules the chart components depend on: **no red** (red means "wrong"
-everywhere else — a semantic chart passes `--color-danger-border` explicitly on
-a series instead), and **colour is never the only cue** (every series is named
-in the legend and repeated in the accessible data table). Each clears 3:1
-against the surface (WCAG 1.4.11).
+| Token | Default |
+| --- | --- |
+| `--color-chrome-bg` | `#ffffff` |
+| `--color-chrome-bg-elevated` | `#ffffff` |
+| `--color-chrome-fg` | `#131e29` |
+| `--color-chrome-fg-muted` | `#556b82` |
+| `--color-chrome-hover` | `#eaecee` (also used for hover on buttons, headers and rows) |
+| `--color-chrome-border` | `#d9d9d9` |
+| `--color-chrome-active` | `#0058bf` |
 
-`--chart-1` `#0070f2` blue · `--chart-2` `#6c32a9` purple · `--chart-3`
-`#2b7d42` green · `--chart-4` `#dd6100` orange · `--chart-5` `#5b738b` slate ·
-`--chart-6` `#047d7a` teal · `--chart-7` `#ba066c` magenta · `--chart-8`
-`#4a4ecc` indigo.
+### Charts
+
+| Token | Default |
+| --- | --- |
+| `--chart-1` … `--chart-8` | `#0070f2` blue, `#6c32a9` purple, `#2b7d42` green, `#dd6100` orange, `#5b738b` slate, `#047d7a` teal, `#ba066c` magenta, `#4a4ecc` indigo |
+| `--chart-gridline` | `#e5e5e5` |
+| `--chart-axis` | `#bcc3ca` |
+| `--chart-label` | `#556b82` |
+
+### Elevation, radius and spacing
+
+| Token | Default |
+| --- | --- |
+| `--shadow-sm` | cards, sticky form actions |
+| `--shadow-md` | combobox popup, chart tooltip |
+| `--shadow-lg` | dialogs |
+| `--radius-sm` | `0.25rem` (fields, tables) |
+| `--radius-md` | `0.5rem` (buttons) |
+| `--radius-lg` | `0.75rem` (cards, dialogs) |
+| `--radius-pill` | `999px` |
+| `--space-1` … `--space-6` | `0.25rem`, `0.5rem`, `0.75rem`, `1rem`, `1.5rem`, `2rem` |
+| `--space-8` | `3rem` (there's no `--space-7`) |
 
 ### Typography
 
-Base is **14px** (`--text-md`), the density business software is read at, not
-16px. The scale climbs `--text-xs` `11px` → `--text-2xl` `22px`. Weights
-`--weight-normal` 400 through `--weight-bold` 700. Font stack is SAP's "72" with
-Arial fallback.
+| Token | Default |
+| --- | --- |
+| `--font-sans` | `"72", "72full", Arial, Helvetica, sans-serif` |
+| `--font-mono` | `"72Mono", "72Monofull", "SFMono-Regular", ui-monospace, Consolas, monospace` |
+| `--text-xs` / `-sm` / `-md` / `-lg` / `-xl` / `-2xl` | `0.6875rem` / `0.75rem` / `0.875rem` (base, 14px) / `1rem` / `1.125rem` / `1.375rem` |
+| `--weight-normal` / `-medium` / `-semibold` / `-bold` | `400` / `500` / `600` / `700` |
+| `--leading-tight` / `-normal` | `1.25` / `1.5` |
+| `--tracking-tight` / `-wide` | `-0.011em` / `0.06em` |
 
-### Spacing, radius, control metrics, motion
+"72" is SAP's font and isn't bundled. Users without it see Arial. To use your
+own font, load it (for example with `@font-face`) and set `--font-sans`.
 
-- **Spacing** is a 4px base: `--space-1` `0.25rem` … `--space-8` `3rem`.
-- **Radius**: `--radius-sm` 4px (fields — tighter), `--radius-md` 8px (buttons),
-  `--radius-lg` 12px (cards). The field/button difference is a quiet signal of
-  "fill in" versus "press".
-- **Control metrics**: `--control-height` 36px (cozy, the default),
-  `--control-height-compact` 26px. `--form-label-width` 10rem is the gutter a
-  `beside`-layout form lines its labels up on.
-- **Motion**: `--transition-fast` `120ms`, `--transition` `200ms`.
+### Control metrics and motion
 
-## The visually-hidden helper
+| Token | Default | Used for |
+| --- | --- | --- |
+| `--control-height` | `2.25rem` (36px) | inputs and buttons |
+| `--control-height-compact` | `1.625rem` (26px) | compact density |
+| `--control-padding-x` | `0.625rem` | padding inside fields |
+| `--form-label-width` | `10rem` | label column in `beside` forms |
+| `--transition-fast` | `120ms ease` | hover, small changes |
+| `--transition` | `200ms ease` | dialog open/close |
 
-`a11y.css` defines `.erp-visually-hidden`, which takes an element off screen
-while keeping it in the accessibility tree. Four components apply it: `FormField`
-(hidden labels), `ViewTable` and `DataGrid` (hidden captions and screen-reader
-scaffolding), and the charts (their data tables). It uses a doubled selector to
-win specificity against component rules, which is why `a11y.css` loads last.
+`tokens.css` also sets `color-scheme: light` on `:root`.
+
+## What `base.css` does
+
+- `box-sizing: border-box` on everything.
+- `body`: no margin, full height, `--color-bg` background, `--font-sans` at
+  `--text-md`.
+- Headings: bold, tight leading, no top margin. `h1` `--text-2xl`, `h2`
+  `--text-xl`, `h3` `--text-lg`, `h4`–`h6` `--text-md`.
+- Links: `--color-link`, underlined on hover and focus.
+- Bare `<button>`: looks like the default button (white, grey border, blue
+  text, `--control-height` tall).
+- `:focus-visible`: 2px `--color-focus-ring` outline.
+- `prefers-reduced-motion`: turns off animations and transitions.

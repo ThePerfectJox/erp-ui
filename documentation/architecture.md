@@ -1,7 +1,9 @@
 # Architecture
 
-How `erp-ui` is organized, and the conventions every module follows. Read this
-once and every module folder will feel familiar.
+How `erp-ui` is organized, and the conventions every module follows. This page
+is for people changing the library. To use it, start with
+[getting-started.md](./getting-started.md); to restyle it, see
+[customization.md](./customization.md).
 
 ## The two layers of the project
 
@@ -96,6 +98,27 @@ Sorting lives in `shared/sortRows`, not in a module's `core/`, because both
 one copy is what stops two tables on one screen disagreeing about where blank
 cells sort. See [shared.md](./shared.md).
 
+### Inside `DataGrid`
+
+`sheet/DataGrid.tsx` is wiring and markup only. The behaviour is eight
+internal hooks, the pure logic is five `core/` modules (`types`, `cellValue`,
+`clipboard`, `gridSelection`, `gridSizing`), and the markup is five `parts/`.
+The hooks are composed in dependency order:
+
+```text
+useGridSizing → useGridView → useGridDirtyRows → useGridWriter
+  → useGridSelection → useGridEditing → useGridClipboard → useGridKeyboard
+```
+
+Everything the user does is in visual coordinates (position on screen);
+everything written back is in source coordinates (position in `rows`).
+`useGridView` produces `GridViewRow { row, sourceIndex }` to bridge the two,
+and `useGridWriter` is the single write path: typing, paste and Delete all
+become one `writeBlock` call that maps visual to source, skips read-only
+columns, diffs values before marking a row dirty, then calls `onChange` and
+publishes the dirty set. Sorting is a view: `useGridView` freezes the order so
+an edited row doesn't jump mid-keystroke.
+
 ## Import styles
 
 Two equivalent ways to import, both supported:
@@ -132,7 +155,8 @@ box).
 
 - Match the module shape above: barrel, tokenized CSS, one component per file,
   logic that isn't rendering goes in `core/`.
-- Tabs for indentation, double quotes, semicolons.
+- Tabs for indentation, single quotes in TypeScript (double quotes in JSX
+  attributes), no semicolons.
 - Compositional props — pass `ReactNode`/`ReactElement`s in as props rather
   than building compound-component/context APIs.
 - `verbatimModuleSyntax` is on: use `import type`/`export type` for type-only

@@ -1,108 +1,86 @@
 # erp-ui
 
-A React 19 + TypeScript component library for a business-ERP style
-admin app — no UI framework, no table/form/chart library underneath. Everything
-in `src/erp-ui-components/` is built from plain HTML elements and CSS custom
-properties, styled as a light-mode SAP Fiori ("Morning Horizon") theme at a 14px
-base: one interaction blue, filled fields, and semantic status colour.
+A React 19 + TypeScript component library for business (ERP) screens: forms,
+report tables, an Excel-like editable grid, charts, dialogs and a page shell
+with navigation. It's built from plain HTML and CSS custom properties, with no
+UI, table, form or chart library underneath, and styled as a light SAP Fiori
+"Morning Horizon" theme.
 
-Open [`PurchaseOrderScreen`](src/PurchaseOrderScreen.tsx) — wired up as the app's
-only screen in [`src/App.tsx`](src/App.tsx) — to see every component composed in
-one page.
+The library lives in [`src/erp-ui-components/`](src/erp-ui-components/). The
+demo screen [`src/PurchaseOrderScreen.tsx`](src/PurchaseOrderScreen.tsx) uses
+every component on one page.
 
 ## Quick start
 
 ```bash
 npm install
-npm run dev       # start the Vite dev server
+npm run dev       # dev server with the demo screen
 npm run build     # tsc -b && vite build
 npm run lint      # eslint .
-npx tsc -b        # type-check only, no build output
 ```
 
-Stack: React 19.2, react-dom 19.2, react-router-dom 7.18, Vite 8, TypeScript
-~6.0.
-
-## Project layout
-
-```text
-src/
-  main.tsx                  React entry — StrictMode, BrowserRouter, the theme
-  App.tsx                   navigation data + the app shell
-  PurchaseOrderScreen.tsx   the demo screen — every component in one page
-  erp-ui-components/        the component library
-    index.ts                the public barrel
-    styles/                 design tokens, base element styles, a11y helper
-    shared/                 primitives used by more than one module
-    form/                   twelve controls + the field system
-    table/                  ViewTable — a read-only report table
-    sheet/                  DataGrid — an Excel-like editable grid
-    chart/                  bar, line and donut charts, hand-drawn in SVG
-    overlay/                Modal, built on the native <dialog>
-    layout/                 the page shell and its navigation rail
-    assets/                 the SVG icons the layout needs
+```tsx
+// src/main.tsx: load the theme once, first
+import './erp-ui-components/styles/index.css'
 ```
 
-## What's in the box
+```tsx
+import { Form, FormSection, FormRow, TextInput, Button } from './erp-ui-components/form'
 
-| Module | Import | What it gives you |
+<Form onSubmit={save}>
+  <FormSection title="Supplier">
+    <FormRow>
+      <TextInput label="Name" name="name" isRequired />
+      <TextInput label="Email" name="email" type="email" />
+    </FormRow>
+  </FormSection>
+  <Button variant="emphasized" type="submit">Save</Button>
+</Form>
+```
+
+## Documentation
+
+Start here:
+
+- [Getting started](documentation/getting-started.md): what the library is,
+  setup, your first screen, and the conventions every component shares
+- [Customization](documentation/customization.md): props, design tokens,
+  scoped themes, CSS class hooks, a dark theme, and the limits
+
+Components, one page each. Every page explains what the component is, how to
+use it (with examples and a full prop reference), and how to customize it.
+
+| Module | Components | Docs |
 | --- | --- | --- |
-| **form** | `./erp-ui-components/form` | `Form`, `FormSection`, `FormRow`, `FormActions`, `MessageStrip`, `Button`, and 11 field controls (`TextInput`, `NumberInput`, `DateInput`, `TextArea`, `Select`, `ComboBox`, `RadioGroup`, `CheckboxGroup`, `Checkbox`, `Switch`, `FileInput`) |
-| **table** | `./erp-ui-components/table` | `ViewTable` (read-only report table), `TablePagination`, `useTablePagination` |
-| **sheet** | `./erp-ui-components/sheet` | `DataGrid` (editable spreadsheet grid) |
-| **chart** | `./erp-ui-components/chart` | `BarChart`, `LineChart`, `DonutChart` |
-| **overlay** | `./erp-ui-components/overlay` | `Modal` |
-| **layout** | `./erp-ui-components/layout` | `Layout`, `Sidebar` and its parts |
-| **shared** | `./erp-ui-components/shared` | `classNames`, the sort comparator, `useOutsidePointerDown` |
-| **styles** | `./erp-ui-components/styles/index.css` | the theme — load once, first |
+| form | `Form`, `FormSection`, `FormRow`, `FormActions`, `MessageStrip`, `Button`, `TextInput`, `NumberInput`, `DateInput`, `TextArea`, `Select`, `ComboBox`, `RadioGroup`, `CheckboxGroup`, `Checkbox`, `Switch`, `FileInput` | [form.md](documentation/form.md) |
+| table | `ViewTable`, `TablePagination`, `useTablePagination` | [table.md](documentation/table.md) |
+| sheet | `DataGrid` | [sheet.md](documentation/sheet.md) |
+| chart | `BarChart`, `LineChart`, `DonutChart` | [chart.md](documentation/chart.md) |
+| overlay | `Modal` | [overlay.md](documentation/overlay.md) |
+| layout | `Layout`, `Sidebar`, `SidebarMenu`, `SidebarSubMenu` | [layout.md](documentation/layout.md) |
+| styles | design tokens, base styles | [styles.md](documentation/styles.md) |
+| shared | `classNames`, sorting helpers, `useOutsidePointerDown` | [shared.md](documentation/shared.md) |
 
-You can import from the library barrel (`from './erp-ui-components'`) or from a
-module barrel (`from './erp-ui-components/form'` — better tree-shaking, and what
-the demo does). Always import from a barrel, never from a file inside a module.
+Also:
 
-## Full documentation
-
-Detailed docs, one file per module, live in [`documentation/`](documentation/):
-
-- **[architecture.md](documentation/architecture.md)** — how the project is
-  organized and the shape every module follows. **Start here.**
-- **[styles.md](documentation/styles.md)** — the design tokens and the Fiori
-  theme
-- **[shared.md](documentation/shared.md)** — `classNames`, `sortRows`,
-  `useOutsidePointerDown`
-- **[form.md](documentation/form.md)** — the twelve controls, the field system,
-  and the structure components
-- **[table.md](documentation/table.md)** — `ViewTable` and paging
-- **[sheet.md](documentation/sheet.md)** — `DataGrid`, its hooks and core
-- **[chart.md](documentation/chart.md)** — the three charts and their building
-  blocks
-- **[overlay.md](documentation/overlay.md)** — `Modal`
-- **[layout.md](documentation/layout.md)** — the page shell and navigation rail
-- **[demo-screen.md](documentation/demo-screen.md)** — a walkthrough of
-  `PurchaseOrderScreen`
+- [Demo screen walkthrough](documentation/demo-screen.md)
+- [Architecture](documentation/architecture.md): how the source is organized,
+  for contributors
 
 ## Which table do I want?
 
-`table/ViewTable` is for **reading**: rows sorted, sometimes ticked, clicked
-through to a detail screen. Cells can hold anything, and columns size to their
-content.
+- [`ViewTable`](documentation/table.md) for reading: sort, tick rows, click
+  through. Cells can hold badges, links and buttons.
+- [`DataGrid`](documentation/sheet.md) for editing: type into cells, select
+  ranges, copy and paste with Excel.
 
-`sheet/DataGrid` is for **editing**: cells typed into, selected as ranges and
-copied to Excel, columns dragged to a width. Everything in a cell is text.
+## Contributing
 
-If the user types into it, `DataGrid`. If they read it, `ViewTable`. They share
-their sort comparator (`shared/sortRows`) and nothing else.
+- Every module has the same shape: `index.ts` (public API), one component per
+  file, pure logic in `core/`, state in `hooks/`, internal pieces in `parts/`,
+  and a stylesheet that only reads tokens.
+- Tabs, single quotes, no semicolons. `import type` for type-only imports; no
+  enums (use string-literal unions).
+- Run `npx tsc -b` and `npm run lint` before considering a change done.
 
-## Conventions
-
-- Every module folder has the same shape: a barrel `index.ts` (the public API),
-  a tokenized stylesheet, one component per file, pure logic in `core/`, behavior
-  in `hooks/`, internal presentational pieces in `parts/`.
-- Tabs for indentation, double quotes, semicolons.
-- `verbatimModuleSyntax` and `erasableSyntaxOnly` are on: use `import
-  type`/`export type`, and no enums or parameter properties (string-literal
-  unions instead).
-- Verify with `npx tsc -b` and `npm run lint` before considering a change done.
-
-See [architecture.md](documentation/architecture.md#conventions-for-adding-to-the-library)
-for the full list.
+Details in [architecture.md](documentation/architecture.md).

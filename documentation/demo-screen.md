@@ -116,3 +116,16 @@ const added  = [...dirtyItems].filter(([, kind]) => kind === 'added')
 const edited = [...dirtyItems].filter(([, kind]) => kind === 'edited')
 await Promise.all([postItems(added), patchItems(edited)])
 ```
+
+## Screen-level styling
+
+`src/PurchaseOrderScreen.css` shows how to style your own screens around the
+library: it defines only new `po-*` classes built from tokens (a card with
+`--color-surface`, `--radius-lg` and `--shadow-sm`; an uppercase eyebrow; a
+two-column chart grid; status badges using the `--color-*-soft` pairs). It
+doesn't override any library class or token. For overriding the library
+itself, see [customization.md](./customization.md).
+
+The entry point `src/main.tsx` imports the theme
+(`./erp-ui-components/styles/index.css`) before `App` and wraps the app in a
+`<BrowserRouter>`, which `Layout` needs.

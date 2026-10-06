@@ -1,54 +1,38 @@
-# `shared/` — cross-module primitives
+# Shared
 
-Things with no single component family, used by more than one module. The bar
-for living here is **two real callers in different folders**. Anything with one
-caller belongs next to that caller.
+## What it is
 
-That is the distinction from a module's own `core/`: `sheet/core` grid geometry
-is meaningless without a grid, `chart/core` scales are meaningless without a
-chart — so each stays next to the thing it serves. `shared/` is for the genuinely
-family-less primitive.
+Small helpers used by more than one module, exported for your own code too:
 
-No CSS and no components here. Cross-module *styles* live in `../styles`.
+| Export | What it does |
+| --- | --- |
+| `classNames` | Joins class names, skipping falsy values. |
+| `computeOrder`, `compareCellValues`, `cycleSort` | The sorting used by both `ViewTable` and `DataGrid`. |
+| `useOutsidePointerDown` | Runs a callback when the user presses outside an element. |
 
-## Barrel exports
+Types: `SortState`, `SortDirection`, `CellComparator`.
 
 ```ts
-export { classNames } from './classNames'
-export { compareCellValues, computeOrder, cycleSort } from './sortRows'
-export type { CellComparator, SortDirection, SortState } from './sortRows'
-export { useOutsidePointerDown } from './useOutsidePointerDown'
+import { classNames, computeOrder, compareCellValues, cycleSort, useOutsidePointerDown } from './erp-ui-components/shared'
+import type { CellComparator, SortDirection, SortState } from './erp-ui-components/shared'
 ```
+
+There's nothing to customize here; these are plain functions.
 
 ## `classNames(...values)`
 
-Joins class names, dropping anything falsy.
-
 ```ts
-classNames('form-field', `form-field-${variant}`, isDisabled && 'form-field-disabled', className)
+classNames(...values: (string | false | null | undefined)[]): string
 ```
 
-Signature: `(...values: (string | false | null | undefined)[]) => string`.
+```tsx
+<div className={classNames('order-row', isSelected && 'order-row-selected', className)} />
+// "order-row order-row-selected my-class"
+```
 
-Falsy (not only `undefined`) is accepted so `flag && 'name'` works directly —
-that is the shape a conditional class arrives in. `false` and `null` are in the
-signature because `flag && '…'` gives `false` and `map`/`find` results give
-`null`, and neither should need a cast at the call site. Around ten components
-use it.
+## Sorting
 
-## `sortRows` — the shared sort comparator
-
-The one piece of logic `ViewTable` and `DataGrid` share. It started in
-`sheet/core` while the grid was the only thing that sorted, and moved here the
-day `ViewTable` needed the same comparator. One copy is what stops two tables on
-one screen disagreeing about where blank cells sort.
-
-Everything here produces an **order** — an array of source-row indices in
-display position. The rows themselves are never moved. That is deliberate: a
-document's item order is data, so sorting is a way of *looking* at a table, not
-an edit to it.
-
-### Types
+Use these to sort your own lists exactly the way the tables do.
 
 ```ts
 type SortDirection = 'asc' | 'desc'
@@ -56,51 +40,88 @@ interface SortState { columnKey: string; direction: SortDirection }
 type CellComparator = (left: unknown, right: unknown) => number
 ```
 
-### `compareCellValues(left, right): number`
+### `computeOrder(rows, getValue, direction, compare?)`
 
-The default comparison: numbers numerically, dates chronologically, strings
-through a numeric `Intl.Collator` (so `"item 2"` sorts before `"item 10"`), and
-differing types by a fixed type rank so the result is still deterministic. The
-collator is built once and reused.
+```ts
+computeOrder<TRow>(
+  rows: readonly TRow[],
+  getValue: (row: TRow) => unknown,
+  direction: SortDirection,
+  compare: CellComparator = compareCellValues
+): number[]
+```
 
-### `computeOrder(rows, getValue, direction, compare?): number[]`
+Returns the row indices in sorted order. The rows themselves aren't moved.
 
-Computes the display order for a set of rows.
+```ts
+const order = computeOrder(orders, row => row.deliveryDate, 'desc')
+const sorted = order.map(index => orders[index])
+```
 
-| Param | Type | Notes |
-| --- | --- | --- |
-| `rows` | `readonly TRow[]` | the rows to order |
-| `getValue` | `(row: TRow) => unknown` | pulls the sort value — an **accessor**, not a key, so a derived column can be sorted |
-| `direction` | `SortDirection` | |
-| `compare` | `CellComparator` | optional; defaults to `compareCellValues` |
+It guarantees two things:
 
-Two properties it guarantees:
+- Empty values (`null`, `undefined`, `''`, `NaN`, invalid dates) always go to
+  the bottom, in both directions.
+- The sort is stable: equal values keep their original order.
 
-- **Empty cells sink to the bottom in both directions.** They are grouped before
-  direction is applied, so flipping to descending does not float a block of
-  blanks over the largest values — what a spreadsheet does.
-- **The sort is stable.** Rows with equal values keep their document sequence.
+### `compareCellValues(left, right)`
 
-### `cycleSort(current, columnKey): SortState | null`
+The default comparison:
 
-The next state when a header is clicked: ascending → descending → back to the
-document's own order (`null`). Three states rather than a toggle because the
-unsorted order is real information in a business document — once a user has
-sorted an item table, there has to be a way back to item sequence.
+- numbers numerically, dates by time, booleans false before true,
+- strings with natural number ordering, case-insensitive (`"item 2"` before
+  `"item 10"`), using the browser's locale,
+- values of different types by type: number, boolean, date, string, other.
+
+Wrap it for custom sort rules:
+
+```ts
+const STAGE: Record<string, number> = { draft: 1, released: 2, closed: 3 }
+
+const byStage: CellComparator = (left, right) =>
+  compareCellValues(STAGE[String(left)], STAGE[String(right)])
+```
+
+Pass it as a column's `compare` in `ViewTable` or `DataGrid`.
+
+### `cycleSort(current, columnKey)`
+
+```ts
+cycleSort(current: SortState | null, columnKey: string): SortState | null
+```
+
+The next sort state when a header is clicked: ascending, then descending,
+then `null` (original order). Clicking a different column starts at
+ascending.
+
+```tsx
+const [sort, setSort] = useState<SortState | null>(null)
+<button onClick={() => setSort(current => cycleSort(current, 'supplier'))}>Supplier</button>
+```
 
 ## `useOutsidePointerDown(ref, onOutside, isEnabled?)`
 
-Fires `onOutside` on a press that landed outside `ref`'s element. `DataGrid` uses
-it to clear the selection when the user presses elsewhere on the screen.
+```ts
+useOutsidePointerDown(
+  ref: RefObject<HTMLElement | null>,
+  onOutside: () => void,
+  isEnabled = true
+): void
+```
 
-| Param | Type | Notes |
-| --- | --- | --- |
-| `ref` | `RefObject<HTMLElement \| null>` | presses inside this are "inside" |
-| `onOutside` | `() => void` | must be stable — wrap in `useCallback`, or the listener rebuilds every render |
-| `isEnabled` | `boolean` | defaults `true`; skips the listener entirely when false |
+Calls `onOutside` when a pointer press lands outside `ref`'s element. It
+listens to `pointerdown` in the capture phase, so it still fires when other
+code calls `stopPropagation`. Pass `isEnabled={false}` to remove the listener
+while it isn't needed.
 
-Two deliberate choices: it listens on `pointerdown`, not `click` (the selection
-should go the moment the user presses elsewhere, and a drag starting outside and
-ending inside would never fire `click`); and it listens in the **capture phase**,
-so a handler that calls `stopPropagation` — a menu, a modal backdrop — cannot
-stop the host from hearing about the press.
+Wrap `onOutside` in `useCallback`, or the listener is re-added on every
+render.
+
+```tsx
+const panelRef = useRef<HTMLDivElement>(null)
+const close = useCallback(() => setIsOpen(false), [])
+
+useOutsidePointerDown(panelRef, close, isOpen)
+
+return isOpen ? <div ref={panelRef} className="filter-panel">…</div> : null
+```
